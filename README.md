@@ -39,6 +39,20 @@ Priority does not force a panel open, take keyboard focus, or run an action.
 
 ## Get started
 
+### Install with drag and drop
+
+1. [Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.1.0/Notchwork-0.1.0-arm64-development.dmg) and open it.
+2. Drag **Notchwork** onto **Applications** in the installer window.
+3. Eject the disk, then open **Notchwork** from Applications.
+
+![Notchwork installer layout: drag the app to Applications.](docs/assets/installer.png)
+
+*Illustrated installer layout. Finder icons and colors follow your macOS appearance.*
+
+The DMG is a drag-and-drop installer; it does not run scripts or start services. This development app is ad-hoc signed and not notarized, so macOS may block it on first launch. Packaging it as a DMG does not change that signing status.
+
+### Build from source
+
 You need macOS 14 or later and Xcode’s Swift toolchain. The current build has been tested on Apple silicon. Intel builds are not yet verified.
 
 ```sh

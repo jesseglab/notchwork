@@ -7,3 +7,5 @@
 The visual assets follow the repository's noncommercial terms. No Apple logo or third-party application artwork is included. Brand imagery does not imply Apple endorsement. The generated cover's tagline is branding; supported integrations are described explicitly in the README.
 
 `assets/layout.png` and `assets/priority.png` are raster exports of the editable SVG diagrams for consistent rendering in repository previews.
+
+`Assets/Installer/` contains the original editable DMG background and its Retina exports. `docs/assets/installer.png` illustrates the install layout using the app icon and a stylized folder; it is not a screenshot.

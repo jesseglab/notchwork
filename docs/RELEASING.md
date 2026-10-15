@@ -6,7 +6,7 @@ The initial release is **0.1.0**, a source-available developer preview. The main
 
 - Confirm the app name, README, visuals, and release description.
 - Keep PolyForm Noncommercial 1.0.0 and NOTICE together with source and binaries.
-- Run `python3 scripts/check-release.py`, `zsh test.sh`, and `zsh build.sh`.
+- Run `python3 scripts/check-release.py`, `zsh test.sh`, `zsh build.sh`, and `zsh scripts/build-dmg.sh`.
 - Inspect the app on a logged-in Mac, including both drawers and Reduced Motion.
 - Run the local API smoke checks against an isolated preview profile.
 - Verify the archive signature after extracting it outside cloud-synced storage.
@@ -34,7 +34,7 @@ Publish Notchwork and its `v0.1.0` tag before Portkeeper, whose Swift package pi
 ## Release contents
 
 - Source at the reviewed tag.
-- Architecture-labeled app ZIP, when approved for distribution.
+- Architecture-labeled DMG with branded drag-to-Applications layout, plus the app ZIP.
 - Command-line client with LICENSE and NOTICE.
 - SHA256SUMS matching the actual final files.
 - Notes describing the supported macOS version, license, and known limitations.

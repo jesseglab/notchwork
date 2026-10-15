@@ -28,3 +28,10 @@
 - The final build rejects unrecognized playback states; end-to-end playback still needs a manual check on each player.
 
 The maintainer approved publication of the repositories and development releases on 15 October 2026. Release notes retain the signing, architecture, and integration-testing limitations above.
+
+## DMG packaging
+
+- The disk image and contained app signature verify.
+- Every app file matches the existing release ZIP.
+- Applications shortcut, Finder icon positions, hidden Retina artwork, and metadata privacy checks pass.
+- A branded drag-and-drop installer and illustrated README instructions are included.
