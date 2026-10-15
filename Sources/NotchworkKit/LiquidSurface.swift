@@ -219,6 +219,13 @@ enum LiquidShape {
         guard initialized else { return false }
         return surfaceMask.path?.contains(CGPoint(x: point.x - canvas.minX, y: point.y - canvas.minY)) == true
     }
+    /// Opening uses only the compact handle, even while the old expanded surface is closing.
+    /// Once open, the visible animated surface keeps its full interaction area.
+    public func containsHoverPoint(_ point: CGPoint, expanded: Bool) -> Bool {
+        guard initialized, window?.isVisible == true else { return false }
+        if expanded { return containsScreenPoint(point) }
+        return compactFrame.contains(point) && LiquidShape.path(in: compactFrame, edge: edge, progress: 0).contains(point)
+    }
     public func updatePointerPassThrough() {
         let ignore = !containsScreenPoint(NSEvent.mouseLocation)
         if window?.ignoresMouseEvents != ignore { window?.ignoresMouseEvents = ignore }
@@ -234,6 +241,6 @@ enum LiquidShape {
         addTrackingArea(area); tracking = area
     }
     public override func mouseEntered(with event: NSEvent) {
-        if containsScreenPoint(NSEvent.mouseLocation) { onPointerEntered?() }
+        if containsHoverPoint(NSEvent.mouseLocation, expanded: false) { onPointerEntered?() }
     }
 }

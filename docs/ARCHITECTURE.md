@@ -27,6 +27,10 @@ The two integration paths are distinct: the shared host receives JSON cards; an 
 
 Network I/O uses a serial utility queue. Validated commands are applied on the main actor. Activity publications coalesce at 100 ms. One timer tracks the next expiry. The spring display driver runs during surface transitions and stops at rest. Hidden expanded hosting views detach after collapse.
 
+## Pointer interaction
+
+Use `surface.containsHoverPoint(point, expanded: isOpen)` for hover decisions. Closed surfaces activate only inside the compact notch or drawer handle, including during a closing animation. Open surfaces retain their visible interaction area. Hidden windows never activate. `containsScreenPoint` remains the visible-shape hit test for click pass-through; it is not an opening trigger.
+
 ## Current boundaries
 
 The host chooses the first screen with a hardware notch, otherwise the main screen. This is a top-center surface on displays without a notch, not a way to render through the physical camera area. Monitor selection and per-display layout are future work.

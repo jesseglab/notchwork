@@ -63,6 +63,51 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(store.slots(.left)[0]?.id, "base")
         XCTAssertEqual(store.entries.count, 1)
     }
+    @MainActor func testHoverOpeningStaysAtCompactHandleDuringCollapse() {
+        _ = NSApplication.shared
+        let screen = NSScreen.main!.visibleFrame
+        for edge in [LiquidEdge.notch, .leftDrawer, .drawer] {
+            let panel = NSPanel(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
+            panel.isReleasedWhenClosed = false
+            let surface = LiquidSurfaceView(edge: edge, expanded: Text("Details"), compact: Text("Open"))
+            panel.contentView = surface
+            defer { surface.stopMotion(); panel.orderOut(nil) }
+            let expanded = CGRect(x: screen.midX - 200, y: screen.midY - 200, width: 400, height: 400)
+            let compact: CGRect
+            switch edge {
+            case .notch:
+                compact = CGRect(x: expanded.midX - 100, y: expanded.maxY - 34, width: 200, height: 34)
+            case .leftDrawer:
+                compact = CGRect(x: expanded.minX, y: expanded.midY - 48, width: 26, height: 96)
+            case .drawer:
+                compact = CGRect(x: expanded.maxX - 26, y: expanded.midY - 48, width: 26, height: 96)
+            }
+            let handle = CGPoint(x: compact.midX, y: compact.midY)
+            let body = CGPoint(x: expanded.midX, y: expanded.midY)
+            let outside = CGPoint(x: expanded.maxX + 20, y: expanded.midY)
+            XCTAssertFalse(surface.containsHoverPoint(handle, expanded: false))
+            surface.move(compact: compact, expanded: expanded, open: false, animated: false)
+            panel.orderFrontRegardless()
+            XCTAssertTrue(surface.containsHoverPoint(handle, expanded: false))
+            XCTAssertFalse(surface.containsHoverPoint(body, expanded: false))
+            surface.move(compact: compact, expanded: expanded, open: true, animated: false)
+            XCTAssertTrue(surface.containsHoverPoint(body, expanded: true))
+            XCTAssertFalse(surface.containsHoverPoint(outside, expanded: true))
+            surface.move(compact: compact, expanded: expanded, open: false, animated: true)
+            // Re-entering the still-visible closing body must not reopen it.
+            XCTAssertTrue(surface.containsScreenPoint(body))
+            XCTAssertFalse(surface.containsHoverPoint(body, expanded: false))
+            XCTAssertTrue(surface.containsHoverPoint(handle, expanded: false))
+            surface.move(compact: compact, expanded: expanded, open: false, animated: false)
+            XCTAssertFalse(surface.isAnimating)
+            XCTAssertTrue(surface.containsHoverPoint(handle, expanded: false))
+            XCTAssertFalse(surface.containsHoverPoint(body, expanded: false))
+            panel.orderOut(nil)
+            XCTAssertFalse(surface.containsHoverPoint(handle, expanded: false))
+            XCTAssertFalse(surface.containsHoverPoint(handle, expanded: true))
+        }
+    }
+
     @MainActor func testLeftAndRightNativeSurfaceAnchorsAndCleanup() async {
         _ = NSApplication.shared
         for edge in [LiquidEdge.leftDrawer, .drawer] {

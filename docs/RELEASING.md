@@ -1,6 +1,6 @@
 # Releasing Notchwork
 
-The initial release is **0.1.0**, a source-available developer preview. The maintainer approved publishing both repositories and development releases on 15 October 2026. Nothing in the CI workflow publishes releases or pushes tags.
+The current release is **0.1.1**, a source-available developer preview. The maintainer approved publishing both repositories and development releases on 15 October 2026. Nothing in the CI workflow publishes releases or pushes tags.
 
 ## Source preview gate
 
@@ -11,7 +11,7 @@ The initial release is **0.1.0**, a source-available developer preview. The main
 - Run the local API smoke checks against an isolated preview profile.
 - Verify the archive signature after extracting it outside cloud-synced storage.
 - After approval, push the reviewed source to `main`, then wait for GitHub CI to pass.
-- Review the diff and release contents before creating a `v0.1.0` tag and a GitHub **prerelease**.
+- Review the diff and release contents before creating a `v0.1.1` tag and a GitHub **prerelease**.
 
 The build uses the current machine's architecture. Label uploaded binaries accordingly. Apple silicon has been tested; do not label a build universal or Intel-tested without actually building and checking those architectures.
 
@@ -29,7 +29,7 @@ No Developer ID identity, notarization credential, or successful notarization is
 
 ## Companion dependency order
 
-Publish Notchwork and its `v0.1.0` tag before Portkeeper, whose Swift package pins the SDK to version `0.1.0`. Verify a Portkeeper build resolves that remote tag. `NOTCHWORK_PACKAGE_PATH` remains an explicit override for local SDK development.
+Publish Notchwork and its `v0.1.1` tag before Portkeeper, whose Swift package pins the SDK to version `0.1.1`. Verify a Portkeeper build resolves that remote tag. `NOTCHWORK_PACKAGE_PATH` remains an explicit override for local SDK development.
 
 ## Release contents
 

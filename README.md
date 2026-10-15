@@ -10,7 +10,7 @@ A native macOS app. A local integration API. A Swift package for building your o
 
 **macOS 14+ · Swift / SwiftUI · Development preview · Noncommercial source available**
 
-[Download v0.1.0](https://github.com/jesseglab/notchwork/releases/tag/v0.1.0) · [Get started](#get-started) · [Connect an app](#connect-an-app) · [API reference](docs/API.md) · [Contributing](CONTRIBUTING.md)
+[Download v0.1.1](https://github.com/jesseglab/notchwork/releases/tag/v0.1.1) · [Get started](#get-started) · [Connect an app](#connect-an-app) · [API reference](docs/API.md) · [Contributing](CONTRIBUTING.md)
 
 > **Live integrations:** connect Apple Music and Spotify, show real build/script results, and receive service status from the companion Portkeeper bridge. Enable the integrations you want; other apps can connect through the API or Swift SDK. [Setup guide →](docs/INTEGRATIONS.md)
 
@@ -41,7 +41,7 @@ Priority does not force a panel open, take keyboard focus, or run an action.
 
 ### Install with drag and drop
 
-1. [Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.1.0/Notchwork-0.1.0-arm64-development.dmg) and open it.
+1. [Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.1.1/Notchwork-0.1.1-arm64-development.dmg) and open it.
 2. Drag **Notchwork** onto **Applications** in the installer window.
 3. Eject the disk, then open **Notchwork** from Applications.
 
@@ -93,7 +93,7 @@ Use the [Python example](Examples/publish.py), the command-line client, or send 
 
 ### From Swift
 
-Add `https://github.com/jesseglab/notchwork.git` as a Swift package dependency, select version **0.1.0** and the **NotchworkKit** product.
+Add `https://github.com/jesseglab/notchwork.git` as a Swift package dependency, select version **0.1.1** and the **NotchworkKit** product.
 
 ```swift
 import NotchworkKit

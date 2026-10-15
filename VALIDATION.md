@@ -35,3 +35,9 @@ The maintainer approved publication of the repositories and development releases
 - Every app file matches the existing release ZIP.
 - Applications shortcut, Finder icon positions, hidden Retina artwork, and metadata privacy checks pass.
 - A branded drag-and-drop installer and illustrated README instructions are included.
+
+## 0.1.1 hover correction
+
+- All 33 native tests passed on 15 October 2026.
+- Regression coverage checks notch and both drawer handles, re-entry during collapse, hidden windows, expanded interaction, and immediate transitions with animation disabled.
+- Opening and retention use separate hover regions, without new polling timers or animation drivers.

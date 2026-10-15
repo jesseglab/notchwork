@@ -21,7 +21,7 @@ for file in root.rglob('*.md'):
         errors.append(f'{relative}: contains a personal absolute path')
 with (root / 'Info.plist').open('rb') as stream:
     info = plistlib.load(stream)
-if info['CFBundleShortVersionString'] != '0.1.0':
+if info['CFBundleShortVersionString'] != '0.1.1':
     errors.append('Info.plist: unexpected release version')
 if 'PolyForm Noncommercial License 1.0.0' not in (root / 'LICENSE').read_text():
     errors.append('LICENSE: expected noncommercial license missing')

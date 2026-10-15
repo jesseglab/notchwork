@@ -54,7 +54,8 @@ final class HostPanel: NSPanel {
             let panel = HostPanel(title); panel.contentView = surfaces[index]
             panel.escape = { [weak self] in self?.close(index) }
             surfaces[index].onPointerEntered = { [weak self] in
-                guard let self, self.store.preferences.hoverToOpen, !self.suppressed[index] else { return }
+                guard let self, self.store.preferences.hoverToOpen, !self.suppressed[index],
+                      self.surfaces[index].containsHoverPoint(NSEvent.mouseLocation, expanded: false) else { return }
                 self.open(index)
             }
             windows.append(panel)
@@ -116,7 +117,7 @@ final class HostPanel: NSPanel {
         var deadline: Date?
         for index in windows.indices where windows[index].isVisible {
             surfaces[index].updatePointerPassThrough()
-            if surfaces[index].containsScreenPoint(point) {
+            if surfaces[index].containsHoverPoint(point, expanded: opened[index]) {
                 outside[index] = nil
                 if store.preferences.hoverToOpen && !suppressed[index] { open(index) }
             } else {
