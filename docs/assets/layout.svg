@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-labelledby="title desc">
+<title id="title">Four places. One workspace.</title><desc id="desc">Illustrated layout of Notchwork: three slots on either side of the camera notch, and independent drawers at the left and right edges. Example activities are demonstrations, not connected integrations.</desc>
+<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#15241e"/><stop offset="1" stop-color="#090e0c"/></linearGradient></defs>
+<rect width="1440" height="820" rx="24" fill="#0a0c0b"/>
+<g font-family="Arial, Helvetica, sans-serif"><text x="64" y="68" fill="#79ffb3" font-size="13" letter-spacing="3">MAKE THE EDGES USEFUL</text><text x="64" y="118" fill="#f5f6ef" font-size="36" font-weight="600">Four places. One workspace.</text><text x="64" y="153" fill="#8f9c94" font-size="17">Independent app assignments. A shared language for activity.</text>
+<rect x="64" y="198" width="1312" height="490" rx="18" fill="url(#bg)" stroke="#3b4940"/>
+<path d="M 561 198 H 879 V 221 Q 879 246 854 246 H 586 Q 561 246 561 221 Z" fill="#000"/>
+<rect x="317" y="198" width="244" height="48" rx="13" fill="#000"/><rect x="879" y="198" width="244" height="48" rx="13" fill="#000"/>
+<g fill="#16271e" stroke="#72ffb1" stroke-opacity=".5"><rect x="330" y="209" width="65" height="24" rx="7"/><rect x="406" y="209" width="65" height="24" rx="7"/><rect x="482" y="209" width="65" height="24" rx="7"/><rect x="892" y="209" width="65" height="24" rx="7"/><rect x="968" y="209" width="65" height="24" rx="7"/><rect x="1044" y="209" width="65" height="24" rx="7"/></g>
+<g fill="#b6f7d0" font-size="11" text-anchor="middle"><text x="362" y="225">BUILD</text><text x="438" y="225">SYNC</text><text x="514" y="225">FOCUS</text><text x="924" y="225">PORTS</text><text x="1000" y="225">QUEUE</text><text x="1076" y="225">TASK</text></g>
+<g fill="none" stroke="#69b88a" stroke-width="1.5"><path d="M 440 260 V 290 H 520"/><path d="M 1002 260 V 290 H 923"/></g>
+<g fill="#a1b4a8" font-size="13"><text x="530" y="295">LEFT SLOTS</text><text x="814" y="295">RIGHT SLOTS</text></g>
+<path d="M64 324 H337 Q365 324 365 352 V594 Q365 622 337 622 H64 Z" fill="#020403" stroke="#293a30"/>
+<path d="M1376 324 H1103 Q1075 324 1075 352 V594 Q1075 622 1103 622 H1376 Z" fill="#020403" stroke="#293a30"/>
+<g font-size="12" letter-spacing="2" fill="#72ffb1"><text x="88" y="361">LEFT DRAWER</text><text x="1100" y="361">RIGHT DRAWER</text></g>
+<g fill="#eff4ee" font-size="21"><text x="88" y="396">Build activity</text><text x="1100" y="396">Local services</text></g>
+<g fill="#121b16"><rect x="88" y="420" width="252" height="90" rx="12"/><rect x="1100" y="420" width="252" height="90" rx="12"/></g>
+<g fill="#e4ece6" font-size="15"><text x="105" y="448">Compiling the good stuff.</text><text x="1117" y="449">3 services running</text></g>
+<rect x="105" y="470" width="215" height="5" rx="2.5" fill="#283d30"/><rect x="105" y="470" width="149" height="5" rx="2.5" fill="#72ffb1"/>
+<g fill="#8fa798" font-size="13"><text x="105" y="495">70% complete</text><text x="1117" y="479">API · Web · Worker</text><text x="88" y="555">Your app. Your details.</text><text x="1100" y="555">Its own space to expand.</text></g>
+<text x="720" y="461" text-anchor="middle" fill="#e5eee7" font-size="32">More room to work.</text><text x="720" y="495" text-anchor="middle" fill="#839b8b" font-size="16">The center stays yours.</text>
+<g fill="#82948a" font-size="13"><text x="64" y="746">01 / Assign apps to individual slots.</text><text x="540" y="746">02 / Give priority a temporary place.</text><text x="1010" y="746">03 / Expand either edge.</text><text x="64" y="787" font-size="11" fill="#596960">ILLUSTRATED LAYOUT · EXAMPLE ACTIVITIES · NOT A SCREENSHOT</text></g></g></svg>

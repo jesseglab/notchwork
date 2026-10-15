@@ -1,0 +1,88 @@
+# Your interface, Notchwork's surfaces
+
+Notchwork supports two ways to keep an app's own visual identity, layout, and behavior. [Portkeeper](https://github.com/jesseglab/portkeeper) uses both.
+
+| Integration | Who renders the interface | What it supports |
+| --- | --- | --- |
+| Native SDK | Your app | Arbitrary SwiftUI views, AppKit representables, native state, controls, terminals, and action closures. |
+| Shared host | Notchwork's WebKit view | Your offline HTML/CSS/JavaScript layout, a custom PNG slot icon, and named callbacks to your running app. |
+
+The host never loads third-party native executable plugins. Custom native views remain in their owning application. Installing an app does not automatically give it a slot or permission to run a custom interface.
+
+## Native SwiftUI
+
+Add the `NotchworkKit` Swift package product, then provide your real views to `LiquidSurfaceView`:
+
+```swift
+let surface = LiquidSurfaceView(
+    edge: .drawer,
+    expanded: MyTerminalView(model: model),
+    compact: MyMascotButton(action: showTerminal)
+)
+panel.contentView = surface
+surface.move(compact: compactFrame, expanded: expandedFrame,
+             open: true, animated: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+```
+
+Your existing buttons call your own functions directly. View state remains in your app. The SDK manages the curved surface, display-synchronized motion, click-through mask, and detachment of closed expanded content. You own the panel lifecycle, geometry, keyboard policy, and controls. Call `stopMotion()` when disposing of a surface. [Complete panel example.](../Examples/EmbeddedSurface.swift)
+
+This path does not require the standalone Notchwork host or a WebKit process. The SDK is linked into your app. Follow the [noncommercial license](../LICENSE) and include its required notice.
+
+## Custom panels in the shared host
+
+Publish a normal `NotchActivity` with an optional `interface`:
+
+```swift
+let card = NotchActivity(
+    id: "service", sourceID: "com.example.app", sourceName: "My App",
+    title: "Service ready", subtitle: "Custom controls available",
+    ttl: 60,
+    interface: ActivityInterface(
+        html: """
+        <style>
+          body { font: 15px system-ui; background: #101b14; color: #dcffe5; padding: 24px }
+          button { padding: 12px; background: #acffbf; color: #082213; border: 0; border-radius: 12px }
+        </style>
+        <h1>Your layout</h1>
+        <button onclick="notchwork.invoke('restart', 'known-service-id')">Restart service</button>
+        """,
+        height: 240,
+        actions: ["restart"]
+    )
+)
+try await client.publish(card)
+```
+
+The person using Notchwork must enable **Custom UI** for this source in **Connected apps**. Until then, the host shows the normal card. Disabling the source or its custom-interface permission removes the embedded page. Source IDs still use the existing shared-token trust model; they are not verified identities. Enable custom UI only for trusted integrations.
+
+The page receives `window.notchwork.invoke(action, value)`, where both arguments are strings. Only declared action names and values up to 4 KiB are accepted. The host attaches source ID, activity ID, sequence, and timestamp; page code cannot override them. The host does not execute the requested function itself.
+
+Your running app retrieves events and performs only actions it recognizes. Use `wait: true` in a cancellable loop: the host waits up to four seconds and responds immediately on interaction, keeping idle traffic low.
+
+```swift
+let events = try await client.events(sourceID: "com.example.app", after: lastHandledSequence, wait: true)
+for event in events {
+    guard event.activityID == "service", event.action == "restart",
+          event.value == "known-service-id" else { continue }
+    // Call your own service controller here, after checking its current state.
+    lastHandledSequence = event.sequence
+}
+```
+
+Advance the cursor after handling or deliberately rejecting every event. Passing `after` acknowledges earlier events for that source. Delivery is not exactly-once: use the sequence to avoid handling a repeated event, and make consequential actions idempotent where possible. Store the cursor alongside the connection token; reset it when a restarted host changes the token. The queue retains events for 30 seconds, with at most 64 pending per source and 256 total. Publishing/removing activities does not execute actions.
+
+Events are transient, not a durable job queue. An offline app cannot act; its activity should expire promptly. Keep the command handler in your app and validate identifiers against its own current state. Never treat an event value as a shell command. Portkeeper's bridge accepts only known service IDs, known projects, and a fixed list of operations.
+
+## Icons, layout, and lifecycle
+
+- `iconPNG`: optional base64 PNG for the compact slot and fallback card, up to 128 × 128 pixels and 16 KiB of base64. Icons are cached; no animated image decoding is supported.
+- `interface.html`: up to 32 KiB of UTF-8 HTML, including styles/scripts. Escape app data inserted into HTML or JavaScript. Never include secrets.
+- `interface.height`: 80–800 points. Width follows the host surface; design responsively for a narrow drawer. Overflow can scroll within the page.
+- `interface.actions`: up to 20 unique names, each using letters, digits, dots, underscores, and hyphens.
+- The complete JSON request must still fit the API's 64 KiB body limit.
+- Updating HTML reloads the document. Keep it unchanged when possible to preserve text inputs and local view state; publish summary-only changes separately.
+- The host uses a nonpersistent WebKit data store. Its content security policy blocks normal network/resource loading except embedded data images/fonts, and navigation to external pages is denied. The page receives no connection token or local file access from the bridge. Browser dialogs are suppressed.
+- This is an opt-in interface for trusted local integrations, not a general-purpose browser or a security guarantee for hostile JavaScript. Avoid continuous work, expensive effects, and large data assets. Honor `prefers-reduced-motion`.
+- When the expanded surface detaches from its window, the document is cleared so scripts and timers stop. Reopening reloads it. Native SDK views are the best option for existing full native interfaces and sustained terminal rendering.
+
+The surrounding host chrome, source permissions, slot assignment, and priority rules remain controlled by the user. App styling applies within its panel; it cannot replace the control room or another app's slot policy.

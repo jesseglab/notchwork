@@ -1,0 +1,38 @@
+name: Build and test
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check documentation and metadata
+        run: python3 scripts/check-release.py
+      - name: Test core and host state
+        # Native window/display-link timing is checked locally on a logged-in desktop.
+        run: zsh test.sh --skip 'testLeftAndRightNativeSurfaceAnchorsAndCleanup|testWebKitRendersOwnUIRoutesEventsBlocksNetworkAndClearsWhenHidden'
+      - name: Build development artifact
+        run: zsh build.sh
+      - name: Check client redirect boundary
+        run: python3 Tests/client_redirect.py dist/notchworkctl
+      - name: Check real command execution and status
+        run: python3 Tests/command_runner.py dist/notchworkctl
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Notchwork-development-${{ runner.arch }}
+          path: |
+            dist/Notchwork.zip
+            dist/notchworkctl
+            dist/SHA256SUMS
+            dist/LICENSE
+            dist/NOTICE
+          retention-days: 14

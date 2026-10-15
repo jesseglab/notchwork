@@ -1,0 +1,12 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+._*
+
+.env*
+*.p12
+*.p8
+connection.json
+preferences.json
+*.log
