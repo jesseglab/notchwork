@@ -54,6 +54,8 @@ try await client.publish(NotchActivity(
 
 **One** gives a selected app the whole container. **Two** fixes an app on each side. **Multiple** shows the two highest-priority apps, with newest meaningful updates breaking ties. Identical heartbeats do not change order. Users control placement and whether each app and its custom UI are enabled.
 
+The collapsed container follows the physical camera notch: a 2-point edge when idle, or 28 points per side for small app icons while active. Titles and controls appear when expanded. Displays without a camera notch use a 56 × 28-point handle.
+
 There are no built-in Music, Spotify, or Portkeeper adapters. [Portkeeper](https://github.com/jesseglab/portkeeper) is the reference client: it installs/reuses Notchwork and uses the API for all notch UI. Other clients can do the same. See [bundling the runtime](docs/DISTRIBUTION.md).
 
 ## Developer toolbox
@@ -71,7 +73,7 @@ There are no built-in Music, Spotify, or Portkeeper adapters. [Portkeeper](https
 
 ## Status and compatibility
 
-The default branch contains the API 2 development line (`0.2.0`, build 4). The HTTP route remains `/v1/activity`; discover capability from `ping.apiVersion`, not the URL. Older release tags do not provide this contract. Pin a tested commit for your app. Local build artifacts are ad-hoc signed, not notarized public releases.
+The default branch contains the API 2 development line (`0.2.0`, build 5). The HTTP route remains `/v1/activity`; discover capability from `ping.apiVersion`, not the URL. Older release tags do not provide this contract. Pin a tested commit for your app. Local build artifacts are ad-hoc signed, not notarized public releases.
 
 The connection is local and authenticated with a per-launch bearer token. It trusts clients running under the same macOS account; source IDs are labels, not verified app identities. Sandboxed pairing is not implemented. See [security](SECURITY.md).
 

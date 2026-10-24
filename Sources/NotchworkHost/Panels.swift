@@ -19,9 +19,9 @@ final class HostPanel: NSPanel {
     }
 }
 @MainActor final class PanelState: ObservableObject {
-    @Published var housing: CGFloat = 180
-    @Published var topHeight: CGFloat = 32
-    @Published var wing: CGFloat = 86
+    @Published var housing: CGFloat = 0
+    @Published var topHeight: CGFloat = 28
+    @Published var wing: CGFloat = 28
 }
 @MainActor final class PanelManager {
     private let store: ActivityStore
@@ -86,16 +86,14 @@ final class HostPanel: NSPanel {
     private func layout(animated: Bool) {
         guard let screen = NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 }) ?? NSScreen.main else { return }
         let frame = screen.frame
-        let housing = screen.auxiliaryTopLeftArea.flatMap { left in screen.auxiliaryTopRightArea.map { max(0, $0.minX - left.maxX) } } ?? 150
-        let top = max(28, screen.safeAreaInsets.top)
-        let wing: CGFloat = 150
-        if state.housing != housing { state.housing = housing }
-        if state.topHeight != top { state.topHeight = top }
-        if state.wing != wing { state.wing = wing }
-        let width = min(frame.width - 24, housing + wing * 2)
-        let expandedWidth = max(width, min(store.presentationActivities.count == 1 ? 560 : 920, frame.width - 24))
-        let compact = CGRect(x: frame.midX - width / 2, y: frame.maxY - top - 6, width: width, height: top + 6)
-        let expanded = CGRect(x: frame.midX - expandedWidth / 2, y: frame.maxY - min(480, frame.height - 24), width: expandedWidth, height: min(480, frame.height - 24))
+        let geometry = NotchGeometry(screen: frame, safeTop: screen.safeAreaInsets.top,
+                                     leftArea: screen.auxiliaryTopLeftArea, rightArea: screen.auxiliaryTopRightArea,
+                                     hasActivity: store.visibleActivities.contains { $0 != nil },
+                                     singlePresentation: store.presentationActivities.count == 1)
+        if state.housing != geometry.housing { state.housing = geometry.housing }
+        if state.topHeight != geometry.topHeight { state.topHeight = geometry.topHeight }
+        if state.wing != geometry.wing { state.wing = geometry.wing }
+        let compact = geometry.compact, expanded = geometry.expanded
         let animate = animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         surfaces[0].move(compact: compact, expanded: expanded, open: opened[0], animated: animate)
         windows[0].orderFrontRegardless()

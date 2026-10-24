@@ -10,44 +10,39 @@ struct NotchHeader: View {
     let open: () -> Void
     var body: some View {
         HStack(spacing: 0) {
+            let card = store.visibleActivities.first ?? nil
+            SlotButton(card: card, width: state.wing, height: state.topHeight, open: open)
+            Color.clear.frame(width: state.housing).accessibilityHidden(true)
             if store.preferences.mode == .single {
-                let card = store.visibleActivities.first ?? nil
-                Button(action: open) { ActivityIconView(card: card).frame(width: state.wing, height: state.topHeight) }
-                    .buttonStyle(.plain).accessibilityLabel(card?.sourceName ?? "Configure Notchwork")
-                Color.clear.frame(width: state.housing).accessibilityHidden(true)
                 Button(action: open) {
-                    Text(card?.title ?? "Choose an app").font(.system(size: 11, weight: .medium)).lineLimit(1)
-                        .padding(.horizontal, 10).frame(width: state.wing, height: state.topHeight)
+                    Group {
+                        if let card {
+                            Circle().fill(card.priority == .urgent ? Color.orange : mint).frame(width: 4, height: 4)
+                        } else { Color.clear }
+                    }.frame(width: state.wing, height: state.topHeight).contentShape(Rectangle())
                 }.buttonStyle(.plain)
+                    .help(card?.title ?? "Configure Notchwork")
+                    .accessibilityLabel(card.map { $0.sourceName + ": " + $0.title } ?? "Configure Notchwork")
             } else {
-                slots(.left).frame(width: state.wing, alignment: .trailing)
-                Color.clear.frame(width: state.housing).accessibilityHidden(true)
-                slots(.right).frame(width: state.wing, alignment: .leading)
+                SlotButton(card: store.slots(.right).first ?? nil, width: state.wing, height: state.topHeight, open: open)
             }
         }.frame(maxWidth: .infinity).frame(height: state.topHeight).foregroundStyle(mint)
-    }
-    func slots(_ side: NotchSide) -> some View {
-        HStack(spacing: 2) {
-            ForEach(Array(store.slots(side).enumerated()), id: \.offset) { _, card in
-                SlotButton(card: card, height: state.topHeight, open: open)
-            }
-        }.padding(.horizontal, 6)
     }
 }
 private struct SlotButton: View {
     let card: NotchActivity?
+    let width: CGFloat
     let height: CGFloat
     let open: () -> Void
     private var label: String { card.map { $0.sourceName + ": " + $0.title } ?? "Empty slot · configure Notchwork" }
-    private var color: Color { card?.priority == .urgent ? .orange : mint }
     var body: some View {
         Button(action: open) {
-            HStack(spacing: 4) {
-                ActivityIconView(card: card).foregroundStyle(color)
+            Group {
                 if let card {
-                    Text(card.title).lineLimit(1).font(.system(size: 9, weight: .medium, design: .monospaced))
-                }
-            }.frame(width: 136, height: height)
+                    ActivityIconView(card: card, size: 16)
+                        .foregroundStyle(card.priority == .urgent ? Color.orange : mint)
+                } else { Color.clear }
+            }.frame(width: width, height: height).contentShape(Rectangle())
         }.buttonStyle(.plain).help(label).accessibilityLabel(label)
     }
 }
@@ -145,6 +140,7 @@ struct ActivityCard: View {
 
 private struct ActivityIconView: View {
     let card: NotchActivity?
+    var size: CGFloat = 22
     private static let cache = NSCache<NSString, NSImage>()
     private var image: NSImage? {
         guard let encoded = card?.iconPNG else { return nil }
@@ -154,7 +150,7 @@ private struct ActivityIconView: View {
         return image
     }
     var body: some View {
-        if let image { Image(nsImage: image).resizable().scaledToFit().frame(width: 22, height: 22) }
-        else { Image(systemName: icon(card?.symbol ?? "circle.dotted")) }
+        if let image { Image(nsImage: image).resizable().scaledToFit().frame(width: size, height: size) }
+        else { Image(systemName: icon(card?.symbol ?? "circle.dotted")).resizable().scaledToFit().frame(width: size, height: size) }
     }
 }
