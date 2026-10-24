@@ -1,12 +1,15 @@
 # Changelog
 
-## 0.2.0 — API 2 development line
+## 0.2.0 — 2026-10-24 (development preview)
 
 - Shared runtime now owns only the generic notch container, settings, and API; built-in client adapters were removed.
 - One, Two, and Multiple modes with meaningful-update priority ordering.
 - Source registration, API capability discovery, and explicit presentation.
 - Runnable Swift/Python examples, strict loopback reference client, doctor, request schema, lifecycle/distribution guides, and copyable LLM prompts.
 - Isolated developer profiles via NOTCHWORK_DATA_DIRECTORY.
+- Compact physical-notch sizing with padded icons and an unobtrusive handle on other displays.
+- App-owned custom interfaces with live state, forms, declared actions, and persistent editing without hover dismissal.
+- Apple silicon DMG and ZIP downloads, command-line client, and SHA-256 checksums.
 
 ## 0.1.0 — 2026-10-15
 

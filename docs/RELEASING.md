@@ -1,54 +1,36 @@
 # Releasing Notchwork
 
-The current release is **0.1.1**, a source-available developer preview. The maintainer approved publishing both repositories and development releases on 15 October 2026. Nothing in the CI workflow publishes releases or pushes tags.
+The current release is **0.2.0 (build 9)**, an API 2 development preview. Release publishing is a maintainer action; CI builds and checks artifacts but does not publish releases or tags.
 
-## Source preview gate
+## Release checks
 
-- Confirm the app name, README, visuals, and release description.
-- Keep PolyForm Noncommercial 1.0.0 and NOTICE together with source and binaries.
-- Run `python3 scripts/check-release.py`, `zsh test.sh`, `zsh build.sh`, and `zsh scripts/build-dmg.sh`.
-- Inspect the app on a logged-in Mac, including both drawers and Reduced Motion.
-- Run the local API smoke checks against an isolated preview profile.
-- Verify the archive signature after extracting it outside cloud-synced storage.
-- After approval, push the reviewed source to `main`, then wait for GitHub CI to pass.
-- Review the diff and release contents before creating a `v0.1.1` tag and a GitHub **prerelease**.
+- Confirm the README, app version, release notes, and current container/API behavior agree.
+- Keep PolyForm Noncommercial 1.0.0 and NOTICE with source and binaries.
+- Run `python3 scripts/check-release.py`, the Python/schema checks in [CONTRIBUTING](../CONTRIBUTING.md), `zsh test.sh`, and `zsh build.sh`.
+- Inspect the app in a graphical Mac session, including One, Two, Multiple, custom interfaces, and Reduced Motion. Run `python3 Tests/developer_smoke.py dist/Notchwork.app/Contents/MacOS/Notchwork` against its isolated temporary profile.
+- Run `zsh scripts/build-dmg.sh`. It derives the version from Info.plist, rejects a mismatched app archive, and verifies that the mounted DMG contains the unchanged signed app and installer layout.
+- Verify ZIP signatures after extraction outside cloud-synced storage, archive privacy, and architecture. Label downloads by the architecture actually built; do not call an arm64 build universal or Intel-tested.
+- Push reviewed source and wait for CI to pass. Create a versioned GitHub prerelease with the reviewed commit as its target. Upload and verify all assets before publishing.
 
-The build uses the current machine's architecture. Label uploaded binaries accordingly. Apple silicon has been tested; do not label a build universal or Intel-tested without actually building and checking those architectures.
-
-## Developer ID distribution (outside current scope)
-
-The default build is ad-hoc signed for local development. Do not describe it as notarized or as a frictionless public download. For Developer ID distribution, use an existing signing identity:
-
-```sh
-NOTCHWORK_SIGNING_IDENTITY='Developer ID Application: YOUR NAME (TEAMID)' zsh build.sh
-```
-
-Submit the resulting archive through Apple's notarization process using credentials stored in the maintainer's keychain. If distributing the CLI as a separate download, submit it for notarization too. After success, staple and validate the app, recreate the final ZIP, and regenerate checksums. Verify Gatekeeper assessment on the final distributed app. Never commit identities, private keys, credentials, or connection tokens.
-
-No Developer ID identity, notarization credential, or successful notarization is assumed by this repository. A source release can proceed without promising notarized binaries.
+Previously tested app artifacts can be packaged unchanged when subsequent commits only change documentation, tests, or packaging. Verify the executable sources and app metadata have not changed, and record the release commit and bundled runtime version in the notes.
 
 ## Companion dependency order
 
-Publish Notchwork and its `v0.1.1` tag before Portkeeper, whose Swift package pins the SDK to version `0.1.1`. Verify a Portkeeper build resolves that remote tag. `NOTCHWORK_PACKAGE_PATH` remains an explicit override for local SDK development.
+Publish Notchwork **v0.2.0** before Portkeeper **v1.3.3**. Portkeeper needs Notchwork 0.2.0 build 9 or newer and the `interface-forms` capability. Its distribution includes the matching runtime and installs it if needed. Source builds use sibling checkouts or an explicit `NOTCHWORK_PACKAGE_PATH`; CI pins a tested Notchwork commit.
 
 ## Release contents
 
-- Source at the reviewed tag.
-- Architecture-labeled DMG with branded drag-to-Applications layout, plus the app ZIP.
-- Command-line client with LICENSE and NOTICE.
-- SHA256SUMS matching the actual final files.
-- Notes describing the supported macOS version, license, and known limitations.
+- Source at the reviewed version tag.
+- `Notchwork-0.2.0-arm64-development.dmg`, with the branded drag-to-Applications layout.
+- `Notchwork-0.2.0-arm64-development.zip`, containing the same app.
+- `notchworkctl-0.2.0-arm64-development.zip`, containing the CLI, LICENSE, and NOTICE.
+- `SHA256SUMS`, covering the final downloadable artifacts and license files.
+- LICENSE and NOTICE alongside the downloads.
 
-## Suggested repository metadata
+Notes must describe macOS 14+, architecture, development status, installation, compatibility, license, and known limitations. Use version-specific download links in the README because prereleases are not necessarily selected by GitHub’s `/releases/latest` redirect.
 
-Description: **Native macOS notch slots and edge drawers for app activity. Standalone host, local API, and Swift package.**
+## Signing and notarization
 
-Topics: `macos`, `swift`, `swiftui`, `notch`, `appkit`, `developer-tools`, `source-available`, `noncommercial`.
+The current binaries are ad-hoc signed, not Developer ID signed or notarized. State this on the download page: macOS may block downloaded builds on first launch. A DMG does not change this status. Do not recommend disabling Gatekeeper globally.
 
-Enable private vulnerability reporting before inviting public security reports. Protect the default branch after the initial commit and require CI for subsequent pull requests. These settings are proposed here; they are not changed by a local build.
-
-## Release copy
-
-Notchwork gives app activity a place around your Mac's notch and along either screen edge. This first developer preview includes six configurable slots, independent drawers, opt-in priority activities, and a local integration API. Use the Swift client to publish cards, or embed the native surface engine in your own app.
-
-Requires macOS 14+. Includes Apple Music and Spotify adapters, real command status, and the companion Portkeeper bridge. Sample cards are available separately for layout previews. The app and SDK are source-available under PolyForm Noncommercial 1.0.0. Commercial use requires separate permission. See the release assets for their specific signing and architecture status.
+Developer ID distribution requires an existing authorized signing identity, notarization credentials, a successful submission, stapling, and verification of the final distributed artifact. These are not assumed by the development release workflow. If notarized builds are introduced, recreate the ZIP and DMG from the final signed app and regenerate every checksum.

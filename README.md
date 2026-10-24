@@ -10,9 +10,9 @@ A small macOS background app. A local integration API. Settings for the apps you
 
 **macOS 14+ · Swift / SwiftUI · Development preview · Noncommercial source available**
 
-[Get started](#get-started) · [Connect an app](#connect-an-app) · [Copy an LLM prompt](docs/LLM_PROMPTS.md) · [API reference](docs/API.md) · [Releases](https://github.com/jesseglab/notchwork/releases)
+[Download v0.2.0](https://github.com/jesseglab/notchwork/releases/tag/v0.2.0) · [Get started](#get-started) · [Connect an app](#connect-an-app) · [Copy an LLM prompt](docs/LLM_PROMPTS.md) · [API reference](docs/API.md) · [Releases](https://github.com/jesseglab/notchwork/releases)
 
-> **Current development version:** the default branch contains Notchwork **0.2.0, build 9**, with API 2. The downloadable **v0.1.1** release uses the earlier architecture. Build from source below for the shared runtime described here. Development builds are ad-hoc signed and have not been notarized.
+> **Downloadable development preview:** Notchwork **0.2.0, build 9**, with API 2 is available for Apple silicon. [Download the DMG](https://github.com/jesseglab/notchwork/releases/download/v0.2.0/Notchwork-0.2.0-arm64-development.dmg) or [ZIP](https://github.com/jesseglab/notchwork/releases/download/v0.2.0/Notchwork-0.2.0-arm64-development.zip). No source build is needed. These binaries are ad-hoc signed and have not been notarized; macOS may block them on first launch.
 
 ## A place for everything that’s happening
 
@@ -34,7 +34,21 @@ One and Two keep your assignments fixed. Priority never forces the container ope
 
 ## Get started
 
-### Build the current version
+### Install with drag and drop
+
+[Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.2.0/Notchwork-0.2.0-arm64-development.dmg). The [release page](https://github.com/jesseglab/notchwork/releases/tag/v0.2.0) also includes a ZIP and SHA-256 checksums.
+
+1. Download the DMG and open it.
+2. Drag **Notchwork** onto **Applications** in the installer window.
+3. Eject the disk, then open **Notchwork** from Applications.
+
+![Notchwork installer layout: drag the app to Applications.](docs/assets/installer.png)
+
+*Illustrated installer layout. Finder icons and colors follow your macOS appearance.*
+
+The DMG is a drag-and-drop installer; it does not run scripts or start services. This development app is ad-hoc signed and not notarized, so macOS may block it on first launch. Packaging it as a DMG does not change that signing status.
+
+### Build from source
 
 You need macOS 14 or later and Xcode’s Swift toolchain. The current build has been tested on Apple silicon. Intel builds are not yet verified.
 
@@ -48,20 +62,6 @@ open dist/Notchwork.app
 The menu-bar icon opens settings. Choose One, Two, or Multiple, then connect an app using the examples below. An app such as Portkeeper can also install the matching runtime for you. [Connect your apps.](docs/INTEGRATIONS.md)
 
 The build produces `dist/Notchwork.app`, `dist/Notchwork.zip`, and `dist/notchworkctl`, plus checksums and license notices. No security-setting changes are required by these local build instructions.
-
-### Install a published release with drag and drop
-
-The [v0.1.1 Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.1.1/Notchwork-0.1.1-arm64-development.dmg) remains available for the earlier version. It does **not** provide API 2; use the source build above for current integrations.
-
-1. Download the DMG and open it.
-2. Drag **Notchwork** onto **Applications** in the installer window.
-3. Eject the disk, then open **Notchwork** from Applications.
-
-![Notchwork installer layout: drag the app to Applications.](docs/assets/installer.png)
-
-*Illustrated installer layout. Finder icons and colors follow your macOS appearance.*
-
-The DMG is a drag-and-drop installer; it does not run scripts or start services. This development app is ad-hoc signed and not notarized, so macOS may block it on first launch. Packaging it as a DMG does not change that signing status.
 
 ## Connect an app
 
