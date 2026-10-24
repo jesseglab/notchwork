@@ -14,7 +14,7 @@ struct NotchGeometry {
         let hasNotch = safeTop > 0 && gap > 0
         housing = hasNotch ? gap : 0
         topHeight = hasNotch ? safeTop : 28
-        wing = hasNotch && !hasActivity ? 2 : 28
+        wing = hasNotch && !hasActivity ? 2 : 36
         let center = hasNotch ? leftArea!.maxX + housing / 2 : screen.midX
         let width = housing + wing * 2
         let height = topHeight + (hasNotch ? 2 : 0)
