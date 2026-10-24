@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — API 2 development line
+
+- Shared runtime now owns only the generic notch container, settings, and API; built-in client adapters were removed.
+- One, Two, and Multiple modes with meaningful-update priority ordering.
+- Source registration, API capability discovery, and explicit presentation.
+- Runnable Swift/Python examples, strict loopback reference client, doctor, request schema, lifecycle/distribution guides, and copyable LLM prompts.
+- Isolated developer profiles via NOTCHWORK_DATA_DIRECTORY.
+
 ## 0.1.0 — 2026-10-15
 
 The first source-available developer release of Notchwork.

@@ -10,9 +10,20 @@ struct NotchHeader: View {
     let open: () -> Void
     var body: some View {
         HStack(spacing: 0) {
-            slots(.left).frame(width: state.wing, alignment: .trailing)
-            Color.clear.frame(width: state.housing).accessibilityHidden(true)
-            slots(.right).frame(width: state.wing, alignment: .leading)
+            if store.preferences.mode == .single {
+                let card = store.visibleActivities.first ?? nil
+                Button(action: open) { ActivityIconView(card: card).frame(width: state.wing, height: state.topHeight) }
+                    .buttonStyle(.plain).accessibilityLabel(card?.sourceName ?? "Configure Notchwork")
+                Color.clear.frame(width: state.housing).accessibilityHidden(true)
+                Button(action: open) {
+                    Text(card?.title ?? "Choose an app").font(.system(size: 11, weight: .medium)).lineLimit(1)
+                        .padding(.horizontal, 10).frame(width: state.wing, height: state.topHeight)
+                }.buttonStyle(.plain)
+            } else {
+                slots(.left).frame(width: state.wing, alignment: .trailing)
+                Color.clear.frame(width: state.housing).accessibilityHidden(true)
+                slots(.right).frame(width: state.wing, alignment: .leading)
+            }
         }.frame(maxWidth: .infinity).frame(height: state.topHeight).foregroundStyle(mint)
     }
     func slots(_ side: NotchSide) -> some View {
@@ -36,37 +47,24 @@ private struct SlotButton: View {
                 if let card {
                     Text(card.title).lineLimit(1).font(.system(size: 9, weight: .medium, design: .monospaced))
                 }
-            }.frame(width: 68, height: height)
+            }.frame(width: 136, height: height)
         }.buttonStyle(.plain).help(label).accessibilityLabel(label)
-    }
-}
-struct DrawerTab: View {
-    var side: NotchSide
-    let open: () -> Void
-    var body: some View {
-        Button(action: open) {
-            VStack(spacing: 14) {
-                Image(systemName: side == .left ? "chevron.right" : "chevron.left")
-                RoundedRectangle(cornerRadius: 2).frame(width: 3, height: 25).opacity(0.5)
-            }.font(.system(size: 10, weight: .semibold)).foregroundStyle(mint).frame(maxWidth: .infinity, maxHeight: .infinity)
-        }.buttonStyle(.plain).accessibilityLabel("Open \(side.rawValue) drawer")
     }
 }
 struct ActivityList: View {
     @ObservedObject var store: ActivityStore
-    var side: NotchSide?
     var close: () -> Void
     var settings: () -> Void
-    var cards: [NotchActivity] { store.cards(side ?? .left, drawer: side != nil) }
+    var cards: [NotchActivity] { store.presentationActivities.compactMap { $0 } }
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(side.map { "\($0.rawValue.uppercased()) DRAWER" } ?? "NOTCHWORK").font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(mint)
-                    Text(side == nil ? "Your apps, within reach." : "Live activities").font(.system(size: 18, weight: .medium))
+                    Text("NOTCHWORK").font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(mint)
+                    Text(store.presentationActivities.count == 1 ? (cards.first?.sourceName ?? "Choose an app") : "Your apps, within reach.").font(.system(size: 18, weight: .medium))
                 }
                 Spacer()
-                Button(action: settings) { Image(systemName: "slider.horizontal.3") }.help("Configure slots and drawers")
+                Button(action: settings) { Image(systemName: "slider.horizontal.3") }.help("Configure the notch")
                 Button(action: close) { Image(systemName: "xmark") }.help("Collapse")
             }.buttonStyle(.plain).padding(22)
             Divider().overlay(mint.opacity(0.15))
@@ -76,16 +74,22 @@ struct ActivityList: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Image(systemName: "square.stack.3d.up").font(.system(size: 30)).foregroundStyle(mint)
                             Text("A place for your apps.").font(.system(size: 22, weight: .medium))
-                            Text("Connect an app or load examples to try slots, priority activities, and both edge drawers.").foregroundStyle(.secondary)
-                            Button("Load examples") { store.loadExamples() }.buttonStyle(.borderedProminent).tint(mint).foregroundStyle(.black)
+                            Text("Apps connect through the Notchwork API. Choose how they share the container in settings.").foregroundStyle(.secondary)
+                            Button("Settings") { settings() }.buttonStyle(.borderedProminent).tint(mint).foregroundStyle(.black)
                         }.padding(.vertical, 20)
                     }
-                    ForEach(cards, id: \.stableKey) { card in
-                        if let interface = card.interface, store.permitsInterface(card) {
-                            CustomInterfaceView(interface: interface) { action, value in
-                                store.invoke(sourceID: card.sourceID, activityID: card.id, action: action, value: value)
-                            }.frame(height: interface.height).clipShape(RoundedRectangle(cornerRadius: 16))
-                        } else { ActivityCard(card: card, dismiss: { store.dismiss(card) }) }
+                    if store.presentationActivities.count == 1 {
+                        if let card = cards.first { content(card) }
+                    } else {
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(Array(store.presentationActivities.enumerated()), id: \.offset) { index, card in
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text(index == 0 ? "LEFT" : "RIGHT").font(.system(size: 9, design: .monospaced)).foregroundStyle(.secondary)
+                                    if let card { content(card) }
+                                    else { Text("No active app").foregroundStyle(.secondary).padding(.vertical, 24) }
+                                }.frame(maxWidth: .infinity, alignment: .topLeading)
+                            }
+                        }
                     }
                 }.padding(20)
             }
@@ -96,6 +100,14 @@ struct ActivityList: View {
             }.padding(.horizontal, 22).padding(.bottom, 18)
         }.foregroundStyle(.white).background(.black).preferredColorScheme(.dark)
     }
+    @ViewBuilder private func content(_ card: NotchActivity) -> some View {
+        if let interface = card.interface, store.permitsInterface(card) {
+            CustomInterfaceView(interface: interface) { action, value in
+                store.invoke(sourceID: card.sourceID, activityID: card.id, action: action, value: value)
+            }.id(card.stableKey).frame(height: interface.height).clipShape(RoundedRectangle(cornerRadius: 16))
+        } else { ActivityCard(card: card, dismiss: { store.dismiss(card) }) }
+    }
+
 }
 extension NotchActivity { var stableKey: String { sourceID + "/" + id } }
 struct ActivityCard: View {

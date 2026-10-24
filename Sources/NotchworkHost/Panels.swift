@@ -28,9 +28,9 @@ final class HostPanel: NSPanel {
     let state = PanelState()
     private var windows: [HostPanel] = []
     private var surfaces: [LiquidSurfaceView] = []
-    private var opened = [false, false, false]
-    private var suppressed = [false, false, false]
-    private var outside: [Date?] = [nil, nil, nil]
+    private var opened = [false]
+    private var suppressed = [false]
+    private var outside: [Date?] = [nil]
     private var timer: Timer?
     private var monitors: [Any] = []
     private var observers: [(NotificationCenter, NSObjectProtocol)] = []
@@ -41,16 +41,10 @@ final class HostPanel: NSPanel {
         let notch = LiquidSurfaceView(edge: .notch,
             expanded: VStack(spacing: 0) {
                 header
-                ActivityList(store: store, side: nil, close: { [weak self] in self?.close(0) }, settings: { [weak self] in self?.settings?() })
+                ActivityList(store: store, close: { [weak self] in self?.close(0) }, settings: { [weak self] in self?.settings?() })
             }, compact: header)
-        let left = LiquidSurfaceView(edge: .leftDrawer,
-            expanded: ActivityList(store: store, side: .left, close: { [weak self] in self?.close(1) }, settings: { [weak self] in self?.settings?() }),
-            compact: DrawerTab(side: .left, open: { [weak self] in self?.open(1, focus: true) }))
-        let right = LiquidSurfaceView(edge: .drawer,
-            expanded: ActivityList(store: store, side: .right, close: { [weak self] in self?.close(2) }, settings: { [weak self] in self?.settings?() }),
-            compact: DrawerTab(side: .right, open: { [weak self] in self?.open(2, focus: true) }))
-        surfaces = [notch, left, right]
-        for (index, title) in ["Notchwork · Notch", "Notchwork · Left drawer", "Notchwork · Right drawer"].enumerated() {
+        surfaces = [notch]
+        for (index, title) in ["Notchwork · Notch"].enumerated() {
             let panel = HostPanel(title); panel.contentView = surfaces[index]
             panel.escape = { [weak self] in self?.close(index) }
             surfaces[index].onPointerEntered = { [weak self] in
@@ -69,46 +63,42 @@ final class HostPanel: NSPanel {
             let observer = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in MainActor.assumeIsolated { self?.layout(animated: false) } }
             observers.append((center, observer))
         }
+        store.onPresent = { [weak self] in self?.open(0, focus: true) }
         store.onLayoutChanged = { [weak self] in self?.layout(animated: true) }
         layout(animated: false)
     }
     func open(_ index: Int, focus: Bool = false) {
-        guard windows.indices.contains(index), !opened[index] else { return }
+        guard windows.indices.contains(index) else { return }
+        if opened[index] {
+            if focus { layout(animated: true); windows[index].makeKeyAndOrderFront(nil) }
+            return
+        }
         opened[index] = true; outside[index] = nil
         layout(animated: true)
         if focus { windows[index].makeKeyAndOrderFront(nil) }
     }
     func close(_ index: Int) {
+        store.endPresentation()
         opened[index] = false; suppressed[index] = true; outside[index] = nil
         windows[index].makeFirstResponder(nil); windows[index].resignKey()
         layout(animated: true)
     }
     private func layout(animated: Bool) {
         guard let screen = NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 }) ?? NSScreen.main else { return }
-        let frame = screen.frame, visible = screen.visibleFrame
+        let frame = screen.frame
         let housing = screen.auxiliaryTopLeftArea.flatMap { left in screen.auxiliaryTopRightArea.map { max(0, $0.minX - left.maxX) } } ?? 150
         let top = max(28, screen.safeAreaInsets.top)
-        let count = max(store.preferences.left.filter(\.enabled).count, store.preferences.right.filter(\.enabled).count, 1)
-        let wing = CGFloat(count) * 74 + 12
+        let wing: CGFloat = 150
         if state.housing != housing { state.housing = housing }
         if state.topHeight != top { state.topHeight = top }
         if state.wing != wing { state.wing = wing }
         let width = min(frame.width - 24, housing + wing * 2)
-        let expandedWidth = max(width, min(560, frame.width - 24))
+        let expandedWidth = max(width, min(store.presentationActivities.count == 1 ? 560 : 920, frame.width - 24))
         let compact = CGRect(x: frame.midX - width / 2, y: frame.maxY - top - 6, width: width, height: top + 6)
         let expanded = CGRect(x: frame.midX - expandedWidth / 2, y: frame.maxY - min(480, frame.height - 24), width: expandedWidth, height: min(480, frame.height - 24))
         let animate = animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         surfaces[0].move(compact: compact, expanded: expanded, open: opened[0], animated: animate)
         windows[0].orderFrontRegardless()
-        for index in 1...2 {
-            let preference = index == 1 ? store.preferences.leftDrawer : store.preferences.rightDrawer
-            guard preference.enabled else { opened[index] = false; surfaces[index].stopMotion(); windows[index].orderOut(nil); continue }
-            let size = CGSize(width: min(420, visible.width / 2 - 16), height: min(680, visible.height - 32))
-            let handle = CGRect(x: index == 1 ? frame.minX : frame.maxX - 26, y: visible.midY - 48, width: 26, height: 96)
-            let content = CGRect(x: index == 1 ? frame.minX : frame.maxX - size.width, y: visible.midY - size.height / 2, width: size.width, height: size.height)
-            surfaces[index].move(compact: handle, expanded: content, open: opened[index], animated: animate)
-            windows[index].orderFrontRegardless()
-        }
     }
     private func pointerMoved() {
         guard NSApp.modalWindow == nil, !NSApp.windows.contains(where: { $0.isVisible && $0.className.contains("Menu") }) else { return }
@@ -138,6 +128,6 @@ final class HostPanel: NSPanel {
         timer?.invalidate(); monitors.forEach(NSEvent.removeMonitor)
         for (center, observer) in observers { center.removeObserver(observer) }
         surfaces.forEach { $0.stopMotion() }; windows.forEach { $0.orderOut(nil) }
-        store.onLayoutChanged = nil
+        store.onLayoutChanged = nil; store.onPresent = nil
     }
 }

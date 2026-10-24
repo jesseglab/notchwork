@@ -1,150 +1,80 @@
-![Notchwork — A little space. For every app.](docs/assets/hero.png)
+# Notchwork
 
-# Your apps, at the edges.
+**One shared macOS notch. Your app supplies the content.**
 
-Notchwork gives app activity a home around your Mac’s notch and along either side of the screen. Keep a build in one slot, services in another, and expand a drawer when you need the details.
+Notchwork is a small background runtime with a morphing container, settings, and a local API. Connect from Swift, Python, Node, Rust, or any process that can send JSON over HTTP. Your app keeps its own logic and handles its own actions; Notchwork owns the notch window and animation.
 
-A native macOS app. A local integration API. A Swift package for building your own surfaces.
+**[Start here →](docs/QUICKSTART.md)** · **[Copy an LLM prompt →](docs/LLM_PROMPTS.md)** · [API reference](docs/API.md) · [Developer guide](docs/DEVELOPERS.md)
 
-**Built with Notchwork:** [Portkeeper](https://github.com/jesseglab/portkeeper) brings Porty, project controls, and managed terminals to the notch. It uses the SDK for its native surfaces and supplies its own panel to the shared host.
+## See it working
 
-**macOS 14+ · Swift / SwiftUI · Development preview · Noncommercial source available**
-
-[Download v0.1.1](https://github.com/jesseglab/notchwork/releases/tag/v0.1.1) · [Get started](#get-started) · [Connect an app](#connect-an-app) · [API reference](docs/API.md) · [Contributing](CONTRIBUTING.md)
-
-> **Live integrations:** connect Apple Music and Spotify, show real build/script results, and receive service status from the companion Portkeeper bridge. Enable the integrations you want; other apps can connect through the API or Swift SDK. [Setup guide →](docs/INTEGRATIONS.md)
-
-> **Development release:** Apple silicon app and CLI downloads are available on the release page. They are ad-hoc signed and have not been notarized; macOS may block downloaded binaries. Building locally is also supported.
-
-## A place for everything that’s happening
-
-![Illustrated layout: three slots on each side of the notch, plus independent left and right drawers.](docs/assets/layout.png)
-
-| Place | Make it yours |
-| --- | --- |
-| Left of the notch | Up to three slots, each assigned to an app or following activities automatically. |
-| Right of the notch | Its own three slots, configured independently. |
-| Left drawer | An expandable home for activity details, following the left side or one chosen app. |
-| Right drawer | A separate drawer with its own app assignment. |
-
-**Small when you’re working. Roomy when you need it.** Hover or click to expand. Activity cards can include progress, plain-text details, and web action buttons. Disable the drawers or slots you don’t need.
-
-## The important things get a turn
-
-![An allowed priority alert briefly replaces an assigned app, then restores it.](docs/assets/priority.png)
-
-Normal, important, and urgent activities share a predictable queue. Enable priority for the apps you trust; each slot can still refuse interruptions. An allowed alert takes a temporary place, then gives it back when dismissed or expired.
-
-Priority does not force a panel open, take keyboard focus, or run an action.
-
-## Get started
-
-### Install with drag and drop
-
-1. [Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.1.1/Notchwork-0.1.1-arm64-development.dmg) and open it.
-2. Drag **Notchwork** onto **Applications** in the installer window.
-3. Eject the disk, then open **Notchwork** from Applications.
-
-![Notchwork installer layout: drag the app to Applications.](docs/assets/installer.png)
-
-*Illustrated installer layout. Finder icons and colors follow your macOS appearance.*
-
-The DMG is a drag-and-drop installer; it does not run scripts or start services. This development app is ad-hoc signed and not notarized, so macOS may block it on first launch. Packaging it as a DMG does not change that signing status.
-
-### Build from source
-
-You need macOS 14 or later and Xcode’s Swift toolchain. The current build has been tested on Apple silicon. Intel builds are not yet verified.
+Requires macOS 14+, Xcode command-line tools, and Python 3.9+ for the Python examples. From this repository:
 
 ```sh
-git clone https://github.com/jesseglab/notchwork.git
-cd notchwork
 zsh build.sh
 open dist/Notchwork.app
+python3 scripts/doctor.py
+python3 Examples/publish.py Examples/build.json --present
 ```
 
-In the control room, enable **Apple Music**, **Spotify**, or the **Portkeeper** bridge and assign your slots. For builds, use the command wrapper below. **Load examples** remains available to try the layout with clearly labeled sample data. The menu bar icon brings configuration back whenever you need it. [Connect your apps.](docs/INTEGRATIONS.md)
+If the runtime is still starting, run the doctor again. `--present` is your explicit request to open the example; normal background updates never open the notch. The card expires automatically.
 
-The build produces `dist/Notchwork.app`, `dist/Notchwork.zip`, and `dist/notchworkctl`, plus checksums and license notices. No security-setting changes are required by these local build instructions.
-
-## Connect an app
-
-### Real builds and scripts
-
-Wrap a command to show its running state and actual result. Output stays in your terminal; failures can request priority.
+Try [interactive controls](Examples/interactive.py):
 
 ```sh
-./dist/notchworkctl run --name "Web build" -- npm run build
-./dist/notchworkctl run --name "Tests" -- swift test
+python3 Examples/interactive.py --present
 ```
 
-The command runs normally even if Notchwork is closed. [Behavior and signal handling.](docs/INTEGRATIONS.md#builds-and-scripts)
+Click **Acknowledge** in the notch. The Python process receives the event, updates its own state, and republishes. Stop it with Ctrl-C, or restart Notchwork while it runs to see reconnection.
 
-### Custom activities
-
-With the host running:
-
-```sh
-./dist/notchworkctl ping
-./dist/notchworkctl publish Examples/build.json
-./dist/notchworkctl remove com.example.builder build-main
-```
-
-Use the [Python example](Examples/publish.py), the command-line client, or send JSON over the local HTTP API. Publishing the same source and activity IDs updates the existing card. Give activities a lifetime so disconnected integrations don’t leave stale items behind.
-
-### From Swift
-
-Add `https://github.com/jesseglab/notchwork.git` as a Swift package dependency, select version **0.1.1** and the **NotchworkKit** product.
+## Use Swift
 
 ```swift
 import NotchworkKit
 
 let client = try NotchworkClient()
+let host = try await client.ping() // Require apiVersion >= 2.
+try await client.register(.init(id: "com.example.app", name: "My App"))
 try await client.publish(NotchActivity(
-    id: "build",
-    sourceID: "com.example.builder",
-    sourceName: "Builder",
-    title: "Building · 64%",
-    symbol: "hammer.fill",
-    preferredSide: .left,
-    progress: 0.64,
-    ttl: 60
+    id: "status", sourceID: "com.example.app", sourceName: "My App",
+    title: "Ready", priority: .low, ttl: 60
 ))
 ```
 
-Want your own native view instead? Embed `LiquidSurfaceView` in an `NSPanel`. The package supports notch, left-drawer, and right-drawer surfaces with custom SwiftUI content. [See the native example.](Examples/EmbeddedSurface.swift)
+[Run the complete Swift package](Examples/HelloNotch/README.md), or follow the [SwiftPM setup](docs/QUICKSTART.md#add-to-a-swift-app). The linked library is the API client; the shared runtime must also be running.
 
-Your app keeps its own visuals, layout, and behavior. **Native apps** supply their own SwiftUI views and closures to the SDK. **Shared-host integrations** can supply an offline HTML/CSS/JavaScript panel, a PNG icon, and named actions delivered back to their app. Custom panels require per-app permission in the control room; standard cards remain the fallback. [Build a custom interface.](docs/CUSTOM_INTERFACES.md)
+## What Notchwork owns
 
-Arbitrary native views run in their owning app through the SDK; they are not loaded as plugins into the shared host. Commercial use of the app or SDK requires separate permission.
+| Notchwork | Your app |
+| --- | --- |
+| One shared notch window and morphing | Content, branding, controls, and state |
+| One / Two / Multiple placement | Low / mid / high updates |
+| Expiry and connected-app settings | Heartbeats, reconnect, and cleanup |
+| Offline HTML rendering and action delivery | Validation and execution of app actions |
 
-## Motion with a light footprint
+**One** gives a selected app the whole container. **Two** fixes an app on each side. **Multiple** shows the two highest-priority apps, with newest meaningful updates breaking ties. Identical heartbeats do not change order. Users control placement and whether each app and its custom UI are enabled.
 
-The same spring-driven engine powers all three surfaces. Hover reversals preserve momentum; a stationary window canvas keeps content stable while its mask changes shape. Reduced Motion applies the final layout immediately.
+There are no built-in Music, Spotify, or Portkeeper adapters. [Portkeeper](https://github.com/jesseglab/portkeeper) is the reference client: it installs/reuses Notchwork and uses the API for all notch UI. Other clients can do the same. See [bundling the runtime](docs/DISTRIBUTION.md).
 
-Closed content is detached from its window. Updates are coalesced, hover handling is event-driven, and expiry uses the next deadline instead of continuous polling. No continuous idle animation is added by the host. Actual resource use depends on activity volume and connected apps.
+## Developer toolbox
 
-## Local by design
+| Need | Start here |
+| --- | --- |
+| First working integration | [Quickstart](docs/QUICKSTART.md) |
+| Have an LLM implement it | [Copyable task prompts](docs/LLM_PROMPTS.md) / [plain-text context](llms.txt) |
+| Know exactly what to send | [API](docs/API.md) / [JSON Schema](docs/command.schema.json) |
+| App-designed controls | [Custom interfaces](docs/CUSTOM_INTERFACES.md) / [interactive example](Examples/interactive.py) |
+| Production lifecycle | [Developer guide](docs/DEVELOPERS.md) |
+| Install Notchwork with your app | [Distribution guide](docs/DISTRIBUTION.md) |
+| Diagnose a hidden card or failed connection | [Troubleshooting](docs/TROUBLESHOOTING.md) / [doctor](scripts/doctor.py) |
+| Contribute or report a bug | [Contributing](CONTRIBUTING.md) / [issue templates](.github/ISSUE_TEMPLATE) |
 
-The host binds to `127.0.0.1`, uses a per-launch integration token, and limits request size and active connections. Activities are kept in memory; layout preferences persist on this Mac. The client refuses redirects and remote endpoints. Browser-origin requests are rejected.
+## Status and compatibility
 
-The token grants access to the whole host. Source IDs are app-supplied labels, **not verified app identities**. Use trusted local integrations. [Read the security model.](SECURITY.md)
+The default branch contains the API 2 development line (`0.2.0`, build 4). The HTTP route remains `/v1/activity`; discover capability from `ping.apiVersion`, not the URL. Older release tags do not provide this contract. Pin a tested commit for your app. Local build artifacts are ad-hoc signed, not notarized public releases.
 
-## Build something with it
-
-- [Integration protocol and limits](docs/API.md)
-- [How the host and framework fit together](docs/ARCHITECTURE.md)
-- [Build, test, and contribute](CONTRIBUTING.md)
-- [Current release notes](CHANGELOG.md)
-- [Release checklist and signing](docs/RELEASING.md)
-
-Apple Music, Spotify, the Portkeeper bridge, and build/script status are included. Verified app pairing, monitor selection, and launch at login are future work. There is no extension marketplace; unsupported apps still need an integration.
+The connection is local and authenticated with a per-launch bearer token. It trusts clients running under the same macOS account; source IDs are labels, not verified app identities. Sandboxed pairing is not implemented. See [security](SECURITY.md).
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE). You may use, modify, and share the software for the purposes permitted by the license. **Commercial use is not granted.** Contact [the maintainer](https://github.com/jesseglab) for separate commercial permission.
-
-This is **source-available software**, not OSI-approved open source. The app and SDK use the same terms. Preserve the [required notice](NOTICE) when redistributing.
-
----
-
-Made for the little things you want to keep in view.
+[PolyForm Noncommercial 1.0.0](LICENSE). Commercial use requires separate permission. Include [LICENSE](LICENSE) and [NOTICE](NOTICE) when distributing the runtime or SDK.

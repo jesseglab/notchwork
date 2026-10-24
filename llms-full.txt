@@ -1,0 +1,426 @@
+# Notchwork API 2 — integration context
+
+Generated from maintained repository docs. Relative links refer to https://github.com/jesseglab/notchwork/blob/main/ . Read source code for the exact revision you integrate.
+
+
+---
+SOURCE: docs/QUICKSTART.md
+
+# Quickstart
+
+[Developer home](../README.md) · [LLM prompts](LLM_PROMPTS.md) · [Troubleshooting](TROUBLESHOOTING.md)
+
+## 1. Start the shared runtime
+
+Use macOS 14 or newer with Xcode command-line tools (`xcode-select --install` if missing). Python examples require Python 3.9+. Clone and build:
+
+```sh
+git clone https://github.com/jesseglab/notchwork.git
+cd notchwork
+zsh build.sh
+open dist/Notchwork.app
+python3 scripts/doctor.py
+```
+
+Success: `Connected to Notchwork API 2.` Startup is asynchronous; retry the doctor if the app is still launching. If an older Notchwork is running, quit it before opening this build. The menu-bar icon opens settings; no dashboard opens at startup.
+
+This builds the current development code. It does not replace an installed app. Do not download an older release expecting API 2. Your app should pin a tested source commit when distributing.
+
+## 2. Publish a card
+
+```sh
+python3 Examples/publish.py Examples/build.json --present
+```
+
+Success: the shared container opens with the build card. The Python example registers the source, publishes all required fields, and explicitly requests presentation because you passed `--present`.
+
+Without `--present`, the card updates quietly. In settings, select the example in One mode, or choose Multiple. A successfully published card may remain hidden if another app is assigned. That is user policy, not a publication failure.
+
+## 3. Send actions back to your app
+
+```sh
+python3 Examples/interactive.py --present
+```
+
+Click **Acknowledge**. The Python process logs the acknowledgement and changes the title. It runs for 60 seconds and removes its card on exit; use `--duration 120` for longer. Restart Notchwork while the example runs: it rediscovers the token, registers, and republishes. A blocked custom interface stays blocked after reconnect.
+
+## 4. Run the Swift sample
+
+```sh
+swift run --package-path Examples/HelloNotch HelloNotch --present
+```
+
+The sample uses this checkout's SDK. It publishes for 10 seconds and removes the card. Abrupt termination is covered by its 30-second TTL. See [the sample README](../Examples/HelloNotch/README.md).
+
+## Add to a Swift app
+
+Add this dependency to `Package.swift` for initial development:
+
+```swift
+.package(url: "https://github.com/jesseglab/notchwork.git", branch: "main")
+```
+
+Add the product to your target:
+
+```swift
+.product(name: "NotchworkKit", package: "notchwork")
+```
+
+For a reproducible shipping build, replace `branch: "main"` with `revision: "YOUR_TESTED_40_CHARACTER_COMMIT"`. API 2 is not available on the old 0.1.x release tags. This links the client and shared types, not a running notch window; [bundle or require the runtime](DISTRIBUTION.md) separately.
+
+```swift
+import NotchworkKit
+
+let client = try NotchworkClient()
+let health = try await client.ping()
+guard (health.apiVersion ?? 0) >= 2 else {
+    throw ActivityError.invalid("Please update Notchwork to an API 2 runtime.")
+}
+try await client.register(.init(id: "com.example.myapp", name: "My App"))
+let card = NotchActivity(id: "status", sourceID: "com.example.myapp",
+                         sourceName: "My App", title: "Ready", priority: .low, ttl: 60)
+try await client.publish(card)
+// On a user click only:
+try await client.present(sourceID: card.sourceID, id: card.id)
+// On normal shutdown:
+try await client.remove(sourceID: card.sourceID, id: card.id)
+```
+
+A real app also needs heartbeat, reconnect, and event handling. Follow the [lifecycle guide](DEVELOPERS.md), or start from [Portkeeper's bridge](https://github.com/jesseglab/portkeeper/blob/main/Sources/NotchworkBridge.swift).
+
+## Use any language
+
+Read `~/Library/Application Support/Notchwork/connection.json`, then send JSON with a bearer token to its loopback endpoint plus `/v1/activity`. Do not print the token, follow redirects, or route requests through a proxy. [The Python reference client](../Examples/notchwork_client.py) shows discovery and transport without external dependencies.
+
+Use the [command schema](command.schema.json) for autocomplete and request validation. It describes request shape; the host is authoritative for byte limits and runtime rules. The [API reference](API.md) covers operations and responses.
+
+---
+SOURCE: docs/API.md
+
+# Local integration API
+
+[Quickstart](QUICKSTART.md) · [Lifecycle](DEVELOPERS.md) · [Request JSON Schema](command.schema.json) · [Copyable LLM prompts](LLM_PROMPTS.md)
+
+Notchwork speaks HTTP on an ephemeral IPv4 loopback port. Read `~/Library/Application Support/Notchwork/connection.json` while the host is running. It contains `endpoint` and `token`; rediscover them after each restart. Treat the token as private. The directory is mode 0700 and the connection file is mode 0600.
+
+## Request
+
+Send `POST /v1/activity` with `Authorization: Bearer <token>`, `Content-Type: application/json`, and Content-Length. The connection closes after one response. Chunked transfer and browser-origin requests are unsupported.
+
+```json
+{
+  "operation": "publish",
+  "activity": {
+    "id": "build-main",
+    "sourceID": "com.example.builder",
+    "sourceName": "Builder",
+    "title": "Building · 64%",
+    "subtitle": "Debug · arm64",
+    "symbol": "hammer.fill",
+    "priority": "mid",
+    "preferredSide": "left",
+    "progress": 0.64,
+    "details": ["12 of 19 targets complete"],
+    "actions": [{"title": "Open dashboard", "url": "http://localhost:3000"}],
+    "ttl": 60
+  }
+}
+```
+
+All activity fields shown are required in JSON except `progress`, which can be omitted or null. The Swift initializer supplies defaults. Symbols use SF Symbols names; unknown symbols fall back to the app symbol.
+
+| Operation | Payload | Effect |
+| --- | --- | --- |
+| `publish` | `activity` | Add or update a card and refresh expiry. Meaningful changes advance its update order. |
+| `remove` | `sourceID`, `id` | Remove one card. Removing an absent card is harmless. |
+| `ping` | No other fields | Check the host; API 2 returns `apiVersion: 2`. |
+| `events` | `sourceID`, optional `after` and `wait` | Retrieve/acknowledge transient UI events; long-poll with `wait: true`. |
+| `register` | `registration: {id, name, customInterface}` | Register an app. New trusted clients may declare custom controls; existing user permissions are preserved. |
+| `present` | `sourceID`, `id` | Explicitly open a live enabled activity in the shared container, without changing saved mode or assignments. |
+
+Update when app state changes. Refresh before `ttl` expires for long-lived activity, and remove a card when its job ends. Activity data is not persisted across host restarts. Layout assignments are persisted. Each new source is enabled by default. Choose Multiple in settings to let notification priority decide placement.
+
+## Priority and placement
+
+The host has three modes:
+
+- **One:** one selected app owns the full morphing container, including its custom controls. Other apps cannot interrupt it. Automatic chooses the oldest live app until it leaves.
+- **Two:** one app stays on the left and one on the right. Explicit assignments override `preferredSide`; Automatic uses the preferred side and reserves the other side’s assigned app. Notifications do not replace fixed assignments.
+- **Multiple:** all enabled apps compete for two visible positions across both sides. `high` outranks `mid`, which outranks `low`. At equal priority, the newest meaningful update wins. One app occupies at most one position. The expanded container shows the same selected apps as the compact notch.
+
+The API accepts `low`, `mid`, and `high`, as well as legacy `normal`, `important`, and `urgent`. Swift clients can use `.low`, `.mid`, and `.high`. SDK encoding retains the legacy wire strings so existing hosts and snapshots remain compatible; `notificationLevel` provides the new display name.
+
+A change to activity content or priority advances its update order. Republishing identical content, or changing only `ttl`, refreshes expiry without taking another app’s place. Optional `notificationID` (1–128 bytes) identifies a distinct event even when its text is unchanged. Use a new ID for a new notification and keep the same ID on heartbeats. Update IDs are opaque, not timestamps.
+
+```json
+{"notificationID":"build-42-failed","priority":"high"}
+```
+
+These are fields inside the existing activity payload; publish the full activity as above. To clear an alert, republish it with `low`, remove it, or let its `ttl` expire. On removal or expiry the next eligible app fills the position. Publishing priority never opens a panel or takes keyboard focus. `present` is a separate explicit-opening operation; clients must call it only in response to a user action. Closing the presentation restores the configured layout. Source Show and Custom UI permissions still apply. The legacy `SlotResolver` remains available to SDK clients; the simplified host uses `NotchLayoutResolver`.
+
+## Limits
+
+| Field or resource | Limit |
+| --- | --- |
+| IDs | 1–128 bytes; ASCII letters, digits, dots, underscores, hyphens |
+| Source name / title / subtitle | 60 / 120 / 240 characters |
+| Symbol | 80 characters |
+| Details | 30 lines, up to 500 characters each |
+| Actions | 3; titles up to 40 characters; URLs up to 2,048 characters |
+| Progress | 0 through 1 |
+| Lifetime | 2–3,600 seconds |
+| HTTP body / headers | 64 KiB / less than 4 KiB |
+| Connections | 8 simultaneous, with a 5-second deadline |
+| Live activities / registered sources | 128 / 32 |
+
+Actions allow http(s) URLs with a host and without embedded credentials. They open only after a user clicks. The host does not execute commands from activities. App-supplied HTML panels require the separate Custom UI permission described below.
+
+## Responses
+
+```json
+{"ok":true,"message":"Activity accepted."}
+```
+
+200 indicates success; 400 indicates malformed or invalid data; 401 indicates invalid authentication; 403 indicates an unsupported browser-origin request; 404 indicates an unsupported route; 413 indicates excessive request size. Malformed or overlong headers may close the connection without a JSON response.
+
+## Trust boundary
+
+A token authorizes access to the whole host. Source IDs are not authenticated identities: a trusted integration with the token can update or remove another source's activities. This version does not offer per-app credentials or revocation. Restarting rotates the token.
+
+Sandboxed apps need a permitted way to obtain the connection information and connect to localhost. Automatic sandbox pairing is not implemented. See [SECURITY.md](../SECURITY.md).
+
+## Examples
+
+- [Runnable Swift package](../Examples/HelloNotch/README.md)
+- [Swift activity snippet](../Examples/NativeIntegration.swift)
+- [Python HTTP publisher](../Examples/publish.py)
+- [Complete JSON card](../Examples/build.json)
+- [Interactive custom UI with reconnect and cleanup](../Examples/interactive.py)
+- [Runtime prerequisite packaging](DISTRIBUTION.md)
+
+## App-designed interfaces and events
+
+Activities may include optional `iconPNG` and `interface` fields. Missing fields remain backward-compatible. See [custom interfaces](CUSTOM_INTERFACES.md) for validation limits, permission, lifecycle, and the page bridge.
+
+```json
+{"operation":"events","sourceID":"com.example.app","after":0}
+```
+
+The normal `{ "ok": true, "message": "UI events." }` response also includes an `events` array. Each event has `sequence` (unsigned integer), `sourceID`, `activityID`, `action`, `value` (string), and `createdAt` (Unix seconds). `after` acknowledges earlier events from that source and returns later ones. Events expire after 30 seconds. Only UI interactions inside a permitted, still-live activity create events; the public API has no operation for invoking callbacks or running commands. The shared host token still grants whole-host access, including event retrieval for sources; this is not per-app authentication.
+
+Set `"wait": true` on an events request to hold it for up to four seconds until an interaction arrives. Other API requests continue independently. The Swift client exposes this as `events(sourceID:after:wait:)`. Waiting avoids frequent idle polls and delivers UI actions as soon as they arrive.
+
+## Runtime prerequisite and registration
+
+The host contains no app-specific adapters or watched client files. A client installs/launches the shared runtime, discovers its current connection, and calls `register` before publishing its interface:
+
+```json
+{"operation":"register","registration":{"id":"com.example.app","name":"Example","customInterface":true}}
+```
+
+This authenticated request declares a trusted local client’s intent to render its own offline HTML controls. On initial registration it enables those controls; subsequent registrations cannot undo a user disabling the app or its custom UI. The same whole-host token trust model applies, with no claim of verified per-app identity.
+
+The response includes `apiVersion: 2`. Re-register after host restart, then republish current state. Existing registered preferences persist; activity and event state do not.
+
+```json
+{"operation":"present","sourceID":"com.example.app","id":"status"}
+```
+
+`present` requires an enabled, unexpired published activity. It temporarily shows that activity full-width in the expanded container, even if the app is not assigned to a compact position. It never modifies saved assignments. Pure notification updates must use `publish` instead.
+
+---
+SOURCE: docs/DEVELOPERS.md
+
+# Integration lifecycle
+
+[Quickstart](QUICKSTART.md) · [API](API.md) · [Custom controls](CUSTOM_INTERFACES.md)
+
+## Ownership
+
+Use one shared Notchwork runtime. Your app owns its content, action handlers, state, and ordinary windows. Never create a competing notch window or import a native surface into your app to duplicate the runtime. Legacy native primitives in the SDK are not the shared-runtime integration path.
+
+## Connection sequence
+
+```text
+start app
+  locate/install and launch the shared runtime
+  discover connection.json
+  ping → require apiVersion >= 2
+  register source (declare customInterface if needed)
+  publish current full activity
+  consume events + refresh unchanged activity every 20 seconds
+on disconnect / rotated token
+  back off → rediscover → register → republish
+on user opens notch
+  publish latest state → present
+on shutdown
+  cancel work → remove own activity (TTL covers crashes)
+```
+
+The runtime generates a new token and an empty activity/event store after restart. Rebuild the client from the new connection file. Do not retry forever against a cached port/token. Use bounded backoff (for example 1, 2, then 5 seconds), cancel it on shutdown, and expose a useful connection state to users. Do not log credentials or echo the connection file in diagnostics.
+
+Registration persists the source's display name and permissions. Initial registration may declare `customInterface: true`. Later registration preserves user restrictions. Do not change source IDs to bypass a disabled app or custom UI. Use one stable reverse-domain source ID and stable activity IDs.
+
+## Update and attention rules
+
+- Publish the **full activity**, not a patch. A raw JSON publisher must provide every required field in [the schema](command.schema.json). Swift's initializer supplies defaults.
+- Use low for routine status, mid for meaningful progress/startup, high for issues requiring attention. Priority is relative display selection, not a system notification or permission to focus the app.
+- Set TTL to 60 seconds and send an unchanged heartbeat every 20 seconds for a persistent card. TTL may be 2–3,600 seconds.
+- Keep `notificationID` stable on heartbeats. Change it only for a genuinely new event with otherwise identical content.
+- When an issue resolves, publish low, remove the activity, or allow expiry. A high-priority activity stays high until changed/removed/expired.
+- One and Two obey user assignments. Multiple ranks high → mid → low, then newest meaningful change. One source takes at most one position.
+- Call `present` only after an explicit user action. It temporarily opens that activity full-width and preserves the saved layout. Do not automatically reopen after reconnect.
+
+## Custom controls
+
+Supply offline HTML/CSS/JavaScript in `interface`, declare action names, and call `window.notchwork.invoke(action, value)` from a user interaction. Your app receives events and executes approved functions. Notchwork never executes your commands. Escape app data inserted in HTML; keep secrets and unrestricted commands out of the payload. External network resources and navigation are blocked.
+
+Design responsively: one or two apps may share the container. Support keyboard focus and reduced motion. Keep `interface.html` unchanged when only summary state changes; changing it reloads the document and loses its local input state. Opening a detached/cleared page reloads it too. Persistent UI state belongs in your app.
+
+## Event handling
+
+Long-poll `events(sourceID:after:wait: true)` (up to four seconds). Keep a cursor for each source and host token. Ignore sequences already handled. Validate source, activity, action, and value against your own model. Advance the cursor after both handled and deliberately rejected events. Reset it only when the host token changes. Never interpret an arbitrary value as a shell command.
+
+Delivery is **not exactly once**. For consequential operations, make handlers idempotent and keep an appropriate durable operation record in your own app. Events expire after 30 seconds and the queue is bounded; it is not a durable job queue. A reconnect alone cannot recover missed interactions. Keep one consumer per source to avoid competing acknowledgements.
+
+## Validate before shipping
+
+1. Run the app against a clean API 2 runtime and verify the card and a real action.
+2. Exercise One, Two, and Multiple; confirm fixed assignments remain fixed.
+3. Publish all three priorities; confirm unchanged heartbeats do not reorder peers.
+4. Restart/quit the host, then relaunch it. Confirm reconnect without automatic presentation.
+5. Disable the app and Custom UI; reconnect and confirm these choices remain disabled.
+6. Kill your client and confirm TTL cleanup. Test normal shutdown cleanup separately.
+7. Reject unknown actions, unknown object IDs, and stale events. Verify logs/payloads exclude credentials and private diagnostics.
+8. Test runtime missing, incompatible installation, signature failure, and concurrent installers if your app bundles the runtime.
+
+[Portkeeper](https://github.com/jesseglab/portkeeper) demonstrates the app lifecycle and prerequisite installer. [The Python example](../Examples/interactive.py) demonstrates a small custom UI client.
+
+---
+SOURCE: docs/CUSTOM_INTERFACES.md
+
+# Your interface, Notchwork’s container
+
+Notchwork owns the shared notch window and morphing container. Apps supply content and receive actions through the local API. Portkeeper uses this shared runtime for all notch UI. Native app windows remain owned by their app.
+
+## Custom panels in the shared host
+
+Publish a normal `NotchActivity` with an optional `interface`:
+
+```swift
+let card = NotchActivity(
+    id: "service", sourceID: "com.example.app", sourceName: "My App",
+    title: "Service ready", subtitle: "Custom controls available",
+    ttl: 60,
+    interface: ActivityInterface(
+        html: """
+        <style>
+          body { font: 15px system-ui; background: #101b14; color: #dcffe5; padding: 24px }
+          button { padding: 12px; background: #acffbf; color: #082213; border: 0; border-radius: 12px }
+        </style>
+        <h1>Your layout</h1>
+        <button onclick="notchwork.invoke('restart', 'known-service-id')">Restart service</button>
+        """,
+        height: 240,
+        actions: ["restart"]
+    )
+)
+try await client.publish(card)
+```
+
+Register a new source with `SourceRegistration(id: "com.example.app", name: "My App", customInterface: true)` before publishing to enable its custom interface on first connection. Registration preserves an existing user choice, including disabling Custom UI. An unregistered source defaults to the normal card. Disabling the source or its custom-interface permission removes the embedded page. Source IDs still use the existing shared-token trust model; they are not verified identities. Enable custom UI only for trusted integrations.
+
+The page receives `window.notchwork.invoke(action, value)`, where both arguments are strings. Only declared action names and values up to 4 KiB are accepted. The host attaches source ID, activity ID, sequence, and timestamp; page code cannot override them. The host does not execute the requested function itself.
+
+Your running app retrieves events and performs only actions it recognizes. Use `wait: true` in a cancellable loop: the host waits up to four seconds and responds immediately on interaction, keeping idle traffic low.
+
+```swift
+let events = try await client.events(sourceID: "com.example.app", after: lastHandledSequence, wait: true)
+for event in events {
+    guard event.activityID == "service", event.action == "restart",
+          event.value == "known-service-id" else { continue }
+    // Call your own service controller here, after checking its current state.
+    lastHandledSequence = event.sequence
+}
+```
+
+Advance the cursor after handling or deliberately rejecting every event. Passing `after` acknowledges earlier events for that source. Delivery is not exactly-once: use the sequence to avoid handling a repeated event, and make consequential actions idempotent where possible. Store the cursor alongside the connection token; reset it when a restarted host changes the token. The queue retains events for 30 seconds, with at most 64 pending per source and 256 total. Publishing/removing activities does not execute actions.
+
+Events are transient, not a durable job queue. An offline app cannot act; its activity should expire promptly. Keep the command handler in your app and validate identifiers against its own current state. Never treat an event value as a shell command. Portkeeper's bridge accepts only known service IDs, known projects, and a fixed list of operations.
+
+## Icons, layout, and lifecycle
+
+- `iconPNG`: optional base64 PNG for the compact slot and fallback card, up to 128 × 128 pixels and 16 KiB of base64. Icons are cached; no animated image decoding is supported.
+- `interface.html`: up to 32 KiB of UTF-8 HTML, including styles/scripts. Escape app data inserted into HTML or JavaScript. Never include secrets.
+- `interface.height`: 80–800 points. Width follows the host surface; design responsively for the selected notch mode. Overflow can scroll within the page.
+- `interface.actions`: up to 20 unique names, each using letters, digits, dots, underscores, and hyphens.
+- The complete JSON request must still fit the API's 64 KiB body limit.
+- Updating HTML reloads the document. Keep it unchanged when possible to preserve text inputs and local view state; publish summary-only changes separately.
+- The host uses a nonpersistent WebKit data store. Its content security policy blocks normal network/resource loading except embedded data images/fonts, and navigation to external pages is denied. The page receives no connection token or local file access from the bridge. Browser dialogs are suppressed.
+- This is an interface for trusted local integrations, not a general-purpose browser or a security guarantee for hostile JavaScript. Avoid continuous work, expensive effects, and large data assets. Honor `prefers-reduced-motion`.
+- When the expanded surface detaches from its window, the document is cleared so scripts and timers stop. Reopening reloads it. Keep sustained native terminal rendering in your app’s ordinary windows.
+
+The surrounding host chrome, source permissions, slot assignment, and priority rules remain controlled by the user. App styling applies within its panel; it cannot replace the host settings or another app's slot policy.
+
+---
+SOURCE: docs/DISTRIBUTION.md
+
+# Ship an app that depends on Notchwork
+
+Notchwork is a shared background app plus an SDK/API. Linking `NotchworkKit` does not install the runtime. Any client can bundle the same runtime; app-specific installation code belongs in the client.
+
+## Development
+
+Build from the same tested Notchwork commit as your SDK. `zsh build.sh` produces `dist/Notchwork.app`, a ZIP, and the CLI. Locally built apps are ad-hoc signed. These artifacts are not a notarized Developer ID release.
+
+For local development, start the runtime yourself. For a complete app, follow the [Portkeeper installer](https://github.com/jesseglab/portkeeper/blob/main/Sources/NotchworkRuntime.swift) and [packaging script](https://github.com/jesseglab/portkeeper/blob/main/build.sh).
+
+## Bundled prerequisite contract
+
+1. Embed the runtime at an app-owned resource path; Portkeeper uses `Contents/Resources/Notchwork/Notchwork.app`.
+2. Check `~/Applications/Notchwork.app`, then `/Applications/Notchwork.app`. A compatible bundle has identifier `app.notchwork.host`, `NotchworkAPIVersion >= 2`, an executable, and a valid signature.
+3. If missing, copy the bundled runtime into a unique staging directory beside the destination. Verify the staged bundle before moving it into `~/Applications/Notchwork.app`. Clean up the staging directory on failure.
+4. Preserve incompatible existing destinations. Report an actionable error instead of silently overwriting them. If another installer wins the race, verify and reuse its result.
+5. Launch once in the background using `NSWorkspace`, without activation. If an older host is already running, explain that it needs to be quit. Do not start a second competing notch host.
+6. Wait with a bounded retry for connection discovery and an API 2 ping, then register and publish. Bundle metadata alone does not prove the running process supports the API.
+
+The reference installer removes FinderInfo/ResourceFork metadata only from the staged copy before strict signature verification. It preserves quarantine and signed contents. Never bypass verification, erase quarantine as an installation workaround, or fetch and run an unpinned mutable download.
+
+## Public distribution
+
+Choose and document a trusted signing/distribution policy for your product. Verify the expected signing identity in addition to signature integrity where your distribution requires it. The current reference installer checks integrity and bundle/API compatibility; it does not establish a separate vendor-identity trust policy. Sign/notarize your shipping bundles through your own release process and test the installed nested runtime on a clean Mac.
+
+The current license is [PolyForm Noncommercial](../LICENSE). Commercial use requires separate permission. Include [LICENSE](../LICENSE) and [NOTICE](../NOTICE). This change does not alter licensing.
+
+## Sandboxed apps
+
+Automatic App Sandbox pairing is not implemented. The default discovery file lives outside a sandboxed app's container. Network entitlements alone do not grant file access. Do not claim an App Store app can use this flow unchanged; design and implement an explicit permitted pairing mechanism first. See [security](../SECURITY.md).
+
+---
+SOURCE: SECURITY.md
+
+# Security
+
+Notchwork 0.2 is intended for trusted local integrations on a single macOS account.
+
+## Boundary
+
+The server listens only on IPv4 loopback and checks a per-launch bearer token. The connection directory and file are owner-only. Requests and connection lifetimes are bounded. Browser-origin requests are rejected. The Swift client validates its loopback endpoint and refuses redirects; it uses an ephemeral session without cookies.
+
+A bearer token grants access to the entire activity host. Source names and IDs are declared by integrations, not verified application identities. They are preferences, not separate security principals. A process with access to the token can impersonate a source or remove its cards. This release does not provide signed app pairing, per-app tokens, or granular revocation.
+
+The host displays activity cards and permitted custom WebKit interfaces. It does not execute shell commands or load native plugin code. Web actions open only on explicit user clicks, using http(s) URLs without embedded credentials. Live activity payloads are memory-only; assignments and source names persist locally.
+
+## Reporting
+
+Do not put tokens or exploit details into public issues. Use GitHub's private vulnerability reporting if enabled for this repository. If that option is unavailable, open a minimal issue asking the maintainer for a private reporting channel without disclosing the vulnerability. A dedicated reporting address is not yet configured.
+
+No external security audit has been performed. Signing and notarization status are documented per release; an ad-hoc development signature is not Developer ID distribution approval.
+
+## Client-owned integrations
+
+Notchwork has no built-in Music, Spotify, or Portkeeper adapters. Apps publish through the local API and execute their own validated actions. `notchworkctl run` executes only a command supplied by the person invoking the CLI; it does not publish arguments, environment, or output. The host API cannot execute commands.
+
+## Custom interfaces
+
+Unregistered sources have custom HTML/JavaScript interfaces disabled by default. An authenticated client may register a new source with custom-interface support enabled. Re-registration cannot override existing user restrictions. This uses the shared-token trust boundary described above. A permitted interface runs in WebKit with a nonpersistent data store, restrictive content security policy, and denied external navigation. The host does not provide file paths, credentials, or the API token to the page. Only declared, bounded action/value messages from the main frame become events; the integration app must validate them before acting. The shared bearer token can read events across sources. Custom UI is intended for trusted local integrations, not hostile-code execution. The host clears detached pages, which stops their scripts. Keep native executable code in the owning app through the SDK rather than loading plugins into the host.

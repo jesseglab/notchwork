@@ -58,6 +58,7 @@ final class HostTests: XCTestCase {
         _ = store.apply(HostCommand(operation: "publish", activity: NotchActivity(id: "base", sourceID: "test.base", sourceName: "Base", title: "Base", ttl: 60)))
         _ = store.apply(HostCommand(operation: "publish", activity: NotchActivity(id: "alert", sourceID: "test.alert", sourceName: "Alert", title: "Alert", priority: .urgent, ttl: 2)))
         store.preferences.sources[1].canInterrupt = true
+        store.preferences.mode = .multiple
         XCTAssertEqual(store.slots(.left)[0]?.id, "alert")
         try? await Task.sleep(nanoseconds: 2_300_000_000)
         XCTAssertEqual(store.slots(.left)[0]?.id, "base")

@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/jesseglab/notchwork/main/docs/command.schema.json",
+  "title": "Notchwork API 2 command",
+  "description": "POST /v1/activity. Strict authoring schema; host may ignore extra keys. Runtime byte/grapheme/image/URL/permission limits remain authoritative.",
+  "$defs": {
+    "activity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        },
+        "sourceID": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        },
+        "sourceName": {
+          "type": "string",
+          "maxLength": 60,
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "minLength": 1
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "symbol": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "mid",
+            "high",
+            "normal",
+            "important",
+            "urgent"
+          ]
+        },
+        "preferredSide": {
+          "enum": [
+            "left",
+            "right"
+          ]
+        },
+        "progress": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "details": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https?://",
+                "description": "Host additionally requires a host and rejects embedded credentials.",
+                "maxLength": 2048,
+                "minLength": 1
+              }
+            },
+            "required": [
+              "title",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "ttl": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 3600
+        },
+        "notificationID": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "At most 128 UTF-8 bytes. Keep stable on heartbeats."
+        },
+        "iconPNG": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 16384,
+          "description": "Base64 single PNG, dimensions 1\u2013128 each; host validates image bytes."
+        },
+        "interface": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/interface"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "sourceID",
+        "sourceName",
+        "title",
+        "subtitle",
+        "symbol",
+        "priority",
+        "preferredSide",
+        "details",
+        "actions",
+        "ttl"
+      ],
+      "additionalProperties": false
+    },
+    "interface": {
+      "type": "object",
+      "properties": {
+        "html": {
+          "type": "string",
+          "description": "At most 32768 UTF-8 bytes, not characters; host enforces byte count.",
+          "maxLength": 32768
+        },
+        "height": {
+          "type": "number",
+          "minimum": 80,
+          "maximum": 800
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "maxLength": 64,
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "html",
+        "height",
+        "actions"
+      ],
+      "additionalProperties": false
+    },
+    "registration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 60,
+          "minLength": 1
+        },
+        "customInterface": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "customInterface"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "ping"
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "register"
+        },
+        "registration": {
+          "$ref": "#/$defs/registration"
+        }
+      },
+      "required": [
+        "operation",
+        "registration"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "publish"
+        },
+        "activity": {
+          "$ref": "#/$defs/activity"
+        }
+      },
+      "required": [
+        "operation",
+        "activity"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "remove"
+        },
+        "sourceID": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "operation",
+        "sourceID",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "present"
+        },
+        "sourceID": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "operation",
+        "sourceID",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "events"
+        },
+        "sourceID": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "maxLength": 128,
+          "minLength": 1
+        },
+        "after": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "wait": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "operation",
+        "sourceID"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

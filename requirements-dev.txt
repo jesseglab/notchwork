@@ -1,0 +1,2 @@
+# Schema authoring checks only; runtime and reference clients have no Python dependencies.
+jsonschema==4.23.0

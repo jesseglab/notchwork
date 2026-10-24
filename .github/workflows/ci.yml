@@ -17,6 +17,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Check documentation and metadata
         run: python3 scripts/check-release.py
+      - name: Test Python reference client
+        run: python3 -m unittest discover -s Tests -p 'test_*.py'
+      - name: Validate API schema and examples
+        run: |
+          python3 -m venv "$RUNNER_TEMP/notchwork-schema"
+          "$RUNNER_TEMP/notchwork-schema/bin/pip" install -r requirements-dev.txt
+          "$RUNNER_TEMP/notchwork-schema/bin/python" scripts/check-schema.py
+      - name: Compile runnable Swift example
+        run: swift build --package-path Examples/HelloNotch
       - name: Test core and host state
         # Native window/display-link timing is checked locally on a logged-in desktop.
         run: zsh test.sh --skip 'testLeftAndRightNativeSurfaceAnchorsAndCleanup|testWebKitRendersOwnUIRoutesEventsBlocksNetworkAndClearsWhenHidden'

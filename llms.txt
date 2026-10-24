@@ -1,0 +1,18 @@
+# Notchwork
+
+> Shared macOS 14+ morphing container and local API. Apps provide content/actions; one background runtime owns all notch rendering. Current default branch: API 2 development line, version 0.2.0. Old 0.1.x tags lack API 2.
+
+- [Quickstart](docs/QUICKSTART.md): build, launch, publish, SwiftPM setup.
+- [Complete LLM context](llms-full.txt): full integration contract in one attachment.
+- [Task prompts](docs/LLM_PROMPTS.md): Swift, any language, custom UI, bundling, migration.
+- [API](docs/API.md): operations, fields, limits, responses, trust.
+- [Command schema](docs/command.schema.json): machine-readable request shapes.
+- [Lifecycle](docs/DEVELOPERS.md): heartbeat, reconnect, events, cleanup.
+- [Custom UI](docs/CUSTOM_INTERFACES.md): offline HTML and named callbacks.
+- [Distribution](docs/DISTRIBUTION.md): shared prerequisite, signing, sandbox limitations.
+- [Troubleshooting](docs/TROUBLESHOOTING.md): hidden cards and connection failures.
+- [Python example](Examples/interactive.py): complete custom-control lifecycle.
+- [Swift package](Examples/HelloNotch/README.md): runnable typed client.
+- [Reference client](https://github.com/jesseglab/portkeeper): Portkeeper owns no notch renderer.
+
+Contract essentials: ping apiVersion >= 2; POST /v1/activity; loopback only; no redirects/proxies; private per-launch bearer token; register then publish full payloads. Only explicit user actions may present. Low/mid/high plus meaningful-update ordering applies in Multiple; One/Two preserve user assignments. Keep notificationID unchanged on heartbeats. Reconnect by rediscovering token and republishing. Validate/deduplicate action events; no arbitrary command execution. User opt-outs persist. No per-app authentication or automatic sandbox pairing. PolyForm Noncommercial; commercial use requires separate permission.

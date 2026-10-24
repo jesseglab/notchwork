@@ -33,5 +33,7 @@ rm -f "$DIST/Notchwork.zip"
 (cd "$BUILD_ROOT" && zip -qr -X "$DIST/Notchwork.zip" Notchwork.app)
 rm -rf "$DIST/Notchwork.app"
 ditto --norsrc "$APP" "$DIST/Notchwork.app"
+xattr -cr "$DIST/Notchwork.app"
+codesign --verify --deep --strict "$DIST/Notchwork.app"
 (cd "$DIST" && shasum -a 256 Notchwork.zip notchworkctl > SHA256SUMS)
 print "Built $DIST/Notchwork.zip ($(uname -m)); signing identity: $SIGN_IDENTITY"

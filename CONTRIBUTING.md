@@ -1,38 +1,31 @@
 # Contributing
 
-Small, focused improvements are welcome. Start with an issue for a larger adapter, API change, or interaction redesign.
+## Scope
 
-## Local development
+Notchwork owns the generic container, API, settings, and lifecycle. Keep app-specific adapters, commands, credentials, and business logic in client repositories. Every added API must work for more than one named app.
 
-Use macOS 14+ with an Xcode Swift toolchain. There are no external package dependencies.
+## Local checks
+
+Requires macOS 14+ and the Xcode Swift toolchain. From the repository root:
 
 ```sh
-zsh build.sh
+python3 scripts/check-release.py
+python3 -m unittest discover -s Tests -p 'test_*.py'
 zsh test.sh
+swift build --package-path Examples/HelloNotch
+zsh build.sh
 ```
 
-For the isolated demo profile:
+For schema checks, create a development virtual environment, install `requirements-dev.txt`, then run `python3 scripts/check-schema.py`. Runtime clients do not need these packages.
+
+For a live example check, build first, then run:
 
 ```sh
-./dist/Notchwork.app/Contents/MacOS/Notchwork --preview
+python3 Tests/developer_smoke.py dist/Notchwork.app/Contents/MacOS/Notchwork
 ```
 
-The preview uses `Notchwork-preview` under the user's temporary directory. Normal launches use Application Support. Avoid running another notch host at the same time. Quit the test app when finished.
+It starts a temporary-profile host, verifies the example client against the real API, then stops only that process and removes its temporary files. Run on a logged-in Mac desktop. CI skips the existing native timing tests that need a graphical login.
 
-The test suite covers activity validation, ordering, interruption policy, expiry, preference persistence, and native motion. The native window timing test needs a logged-in macOS desktop. CI skips only that test and runs the state/model tests plus a release build. CI results are authoritative only after a run has actually completed.
+## Pull requests
 
-API smoke checks target an already running isolated preview:
-
-```sh
-python3 Tests/api_smoke.py "$TMPDIR/Notchwork-preview/connection.json" dist/notchworkctl
-```
-
-## Review expectations
-
-Explain the behavior change and how it was checked. Preserve Reduced Motion, keyboard access, hidden-view suspension, stable equal-priority ordering, and the loopback trust boundary. Do not add polling for behavior that can be event-driven.
-
-Keep fixtures synthetic. Do not commit tokens, connection files, local preferences, personal logs, signing credentials, or generated build products. For a bug, include macOS version, architecture, expected behavior, and a minimal reproduction.
-
-## License
-
-This project is source-available under PolyForm Noncommercial 1.0.0. Submit only code and assets you have the right to contribute under the project's license. Contributors retain their copyright; a contribution does not assign ownership or grant the maintainer additional commercial relicensing rights. Any separate commercial license involving contributed code requires the necessary rightsholders' permission.
+Explain the user-visible behavior, add targeted contract tests, update the schema/API/examples/prompts together when a contract changes, and include validation results. Keep tokens and personal paths out of fixtures. Changes to event semantics, permissions, or compatibility need explicit documentation. Do not change licensing as part of an unrelated integration change.

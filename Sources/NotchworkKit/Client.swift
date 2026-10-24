@@ -14,18 +14,28 @@ public struct HostConnection: Codable, Sendable {
 public struct HostResponse: Codable, Sendable {
     public var ok: Bool
     public var message: String
+    public var apiVersion: Int?
     public var events: [ActivityEvent]?
-    public init(ok: Bool, message: String, events: [ActivityEvent]? = nil) { self.ok = ok; self.message = message; self.events = events }
+    public init(ok: Bool, message: String, events: [ActivityEvent]? = nil, apiVersion: Int? = nil) { self.ok = ok; self.message = message; self.events = events; self.apiVersion = apiVersion }
+}
+public struct SourceRegistration: Codable, Sendable {
+    public var id: String
+    public var name: String
+    public var customInterface: Bool
+    public init(id: String, name: String, customInterface: Bool = false) {
+        self.id = id; self.name = name; self.customInterface = customInterface
+    }
 }
 public struct HostCommand: Codable, Sendable {
+    public var registration: SourceRegistration?
     public var operation: String
     public var activity: NotchActivity?
     public var sourceID: String?
     public var id: String?
     public var after: UInt64?
     public var wait: Bool?
-    public init(operation: String, activity: NotchActivity? = nil, sourceID: String? = nil, id: String? = nil, after: UInt64? = nil, wait: Bool? = nil) {
-        self.operation = operation; self.activity = activity; self.sourceID = sourceID; self.id = id; self.after = after; self.wait = wait
+    public init(operation: String, activity: NotchActivity? = nil, sourceID: String? = nil, id: String? = nil, after: UInt64? = nil, wait: Bool? = nil, registration: SourceRegistration? = nil) {
+        self.registration = registration; self.operation = operation; self.activity = activity; self.sourceID = sourceID; self.id = id; self.after = after; self.wait = wait
     }
 }
 /// Use the same client from Swift apps or send its JSON protocol from any local process.
@@ -44,6 +54,19 @@ public struct NotchworkClient: Sendable {
     public let connection: HostConnection
     public init(connection: HostConnection) { self.connection = connection }
     public init() throws { connection = try .discover() }
+    /// Use an isolated development host without changing the user's connection file.
+    public init(connectionFile: URL) throws { connection = try .discover(at: connectionFile) }
+    /// Check apiVersion before using operations introduced in a newer runtime.
+    public func ping() async throws -> HostResponse {
+        try await send(HostCommand(operation: "ping"))
+    }
+    @discardableResult public func register(_ source: SourceRegistration) async throws -> HostResponse {
+        try await send(HostCommand(operation: "register", registration: source))
+    }
+    /// Call only in response to an explicit user action, never for a status update.
+    @discardableResult public func present(sourceID: String, id: String) async throws -> HostResponse {
+        try await send(HostCommand(operation: "present", sourceID: sourceID, id: id))
+    }
     @discardableResult public func publish(_ activity: NotchActivity) async throws -> HostResponse {
         try activity.validate()
         return try await send(HostCommand(operation: "publish", activity: activity))

@@ -2,6 +2,25 @@ import Foundation
 
 public enum ActivityPriority: String, Codable, CaseIterable, Sendable {
     case normal, important, urgent
+    public static let low = Self.normal
+    public static let mid = Self.important
+    public static let high = Self.urgent
+    public var notificationLevel: String { ["low", "mid", "high"][rank] }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        switch value {
+        case "low", "normal": self = .normal
+        case "mid", "important": self = .important
+        case "high", "urgent": self = .urgent
+        default: throw DecodingError.dataCorruptedError(in: container, debugDescription: "Use low, mid, or high priority.")
+        }
+    }
+    // Keep the wire encoding readable by existing hosts and snapshot consumers.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
     public var rank: Int { switch self { case .normal: return 0; case .important: return 1; case .urgent: return 2 } }
 }
 public enum NotchSide: String, Codable, CaseIterable, Sendable { case left, right }
@@ -25,14 +44,15 @@ public struct NotchActivity: Codable, Identifiable, Equatable, Sendable {
     public var actions: [ActivityAction]
     public var interface: ActivityInterface?
     public var iconPNG: String?
+    public var notificationID: String?
     public var ttl: Double
     public init(id: String, sourceID: String, sourceName: String, title: String,
                 subtitle: String = "", symbol: String = "app", priority: ActivityPriority = .normal,
                 preferredSide: NotchSide = .left, progress: Double? = nil, details: [String] = [],
-                actions: [ActivityAction] = [], ttl: Double = 60, interface: ActivityInterface? = nil, iconPNG: String? = nil) {
+                actions: [ActivityAction] = [], ttl: Double = 60, interface: ActivityInterface? = nil, iconPNG: String? = nil, notificationID: String? = nil) {
         self.id = id; self.sourceID = sourceID; self.sourceName = sourceName; self.title = title
         self.subtitle = subtitle; self.symbol = symbol; self.priority = priority; self.preferredSide = preferredSide
-        self.progress = progress; self.details = details; self.actions = actions; self.ttl = ttl; self.interface = interface; self.iconPNG = iconPNG
+        self.progress = progress; self.details = details; self.actions = actions; self.ttl = ttl; self.interface = interface; self.iconPNG = iconPNG; self.notificationID = notificationID
     }
     public func validate() throws {
         try interface?.validate()
@@ -42,6 +62,7 @@ public struct NotchActivity: Codable, Identifiable, Equatable, Sendable {
         try require(!id.isEmpty && id.utf8.count <= 128 && !sourceID.isEmpty && sourceID.utf8.count <= 128, "IDs must contain 1–128 bytes.")
         try require(!sourceName.isEmpty && sourceName.count <= 60 && !title.isEmpty && title.count <= 120, "A short app name and title are required.")
         try require(subtitle.count <= 240 && symbol.count <= 80, "Subtitle or symbol is too long.")
+        try require(notificationID.map { !$0.isEmpty && $0.utf8.count <= 128 } ?? true, "notificationID must contain 1–128 bytes.")
         try require(ttl.isFinite && (2...3600).contains(ttl), "ttl must be 2–3600 seconds.")
         if let progress { try require(progress.isFinite && (0...1).contains(progress), "Progress must be between 0 and 1.") }
         try require(details.count <= 30 && details.allSatisfy { $0.count <= 500 }, "Use at most 30 detail lines of 500 characters each.")
@@ -80,8 +101,9 @@ public struct ActivityEntry: Equatable, Sendable {
     public var activity: NotchActivity
     public var expiresAt: Date
     public var sequence: UInt64
-    public init(activity: NotchActivity, expiresAt: Date, sequence: UInt64) {
-        self.activity = activity; self.expiresAt = expiresAt; self.sequence = sequence
+    public var updateSequence: UInt64
+    public init(activity: NotchActivity, expiresAt: Date, sequence: UInt64, updateSequence: UInt64? = nil) {
+        self.activity = activity; self.expiresAt = expiresAt; self.sequence = sequence; self.updateSequence = updateSequence ?? sequence
     }
 }
 public enum SlotResolver {

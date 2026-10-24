@@ -5,10 +5,18 @@
   "title": "Building · 64%",
   "subtitle": "Debug · arm64",
   "symbol": "hammer.fill",
-  "priority": "normal",
+  "priority": "mid",
   "preferredSide": "left",
   "progress": 0.64,
-  "details": ["Compiling your project", "12 of 19 targets complete"],
-  "actions": [{"title": "Open dashboard", "url": "http://localhost:3000"}],
+  "details": [
+    "Compiling your project",
+    "12 of 19 targets complete"
+  ],
+  "actions": [
+    {
+      "title": "Open dashboard",
+      "url": "http://localhost:3000"
+    }
+  ],
   "ttl": 60
 }

@@ -10,3 +10,7 @@ dist/
 connection.json
 preferences.json
 *.log
+
+__pycache__/
+*.py[cod]
+.venv/

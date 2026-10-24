@@ -1,0 +1,26 @@
+name: Integration help or bug
+description: Report a reproducible client/runtime integration problem.
+title: "[Integration] "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not attach connection.json, bearer tokens, private logs, or credentials."
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: macOS, architecture, Notchwork commit/API version, and client language.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction and redacted payload
+      description: Include expected/actual behavior and One/Two/Multiple mode.
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Checks already tried
+      description: Doctor result (without tokens), runtime restart, and minimal example result.

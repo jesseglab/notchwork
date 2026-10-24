@@ -1,17 +1,32 @@
 #!/usr/bin/env python3
-"""Send an activity to the running host using only the Python standard library."""
+"""Publish a JSON activity using only Python's standard library."""
+import argparse
 import json
-from pathlib import Path
 import sys
-import urllib.request
-connection_file = Path.home() / "Library/Application Support/Notchwork/connection.json"
-connection = json.loads(connection_file.read_text())
-activity = json.loads(Path(sys.argv[1]).read_text())
-request = urllib.request.Request(
-    connection["endpoint"] + "/v1/activity",
-    data=json.dumps({"operation": "publish", "activity": activity}).encode(),
-    headers={"Authorization": "Bearer " + connection["token"], "Content-Type": "application/json"},
-    method="POST",
-)
-with urllib.request.urlopen(request, timeout=5) as response:
-    print(response.read().decode())
+from pathlib import Path
+from notchwork_client import Client, DEFAULT_CONNECTION, NotchworkError
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('activity', type=Path)
+    parser.add_argument('--connection', type=Path, default=DEFAULT_CONNECTION)
+    parser.add_argument('--present', action='store_true', help='Explicitly open this activity after publishing')
+    args = parser.parse_args()
+    try:
+        card = json.loads(args.activity.read_text())
+        client = Client(args.connection)
+        client.ping()
+        client.register(card['sourceID'], card['sourceName'], bool(card.get('interface')))
+        client.publish(card)
+        if args.present:
+            client.present(card['sourceID'], card['id'])
+        print('Published. The activity expires after %s seconds.' % card['ttl'])
+    except (OSError, ValueError, KeyError, NotchworkError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

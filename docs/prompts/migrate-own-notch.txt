@@ -1,0 +1,9 @@
+Read the current Notchwork developer contract before editing: https://github.com/jesseglab/notchwork/blob/main/llms-full.txt . If you cannot access it, ask me for that file; do not invent API methods or assume a 0.1.x release supports API 2. Inspect my repository and its instructions first.
+
+Migrate this app's existing independent notch UI to the shared Notchwork runtime. First inventory all notch-specific windows, geometry, animation, hover/focus behavior, controls, and routes. Map each user action to an API-supplied card/custom control or an existing ordinary app window. Preserve service/business logic. Remove the duplicate notch renderer and any optional sharing/file-snapshot adapter once the direct API path works. Reuse the Portkeeper bridge/installer as a reference.
+
+Explicitly report visual or feature differences; do not claim pixel parity unless verified. Test real controls, state updates, reconnect, permissions, cleanup, and that the app creates no independent notch windows. Keep Notchwork itself free of this app's adapters or domain logic.
+
+Use one shared Notchwork background runtime. My app owns its content/actions; Notchwork owns all notch windows, morphing, placement, and settings. Require ping.apiVersion >= 2. Discover the current loopback connection without logging its token, register a stable source, publish complete payloads, and preserve user opt-outs. A 60-second TTL plus unchanged 20-second heartbeats is a reasonable starting point. Reconnect by rediscovering, registering, and republishing; do not automatically present on reconnect. Only call present for an explicit user action. Use low/mid/high appropriately and stable notification IDs on heartbeats.
+
+Implement the change, add targeted tests, and document the integration. Report changed files, actual checks/results, and remaining limitations. Do not claim testing you did not run, do not publish a release unless asked, and do not change licensing.

@@ -15,7 +15,6 @@ import Darwin
 }
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     private var store: ActivityStore!
-    private var integrations: Integrations!
     private var panels: PanelManager!
     private var server: LocalServer?
     private var statusItem: NSStatusItem!
@@ -23,12 +22,20 @@ import Darwin
     private var lockFile: Int32 = -1
     func applicationDidFinishLaunching(_ notification: Notification) {
         let preview = CommandLine.arguments.contains("--preview")
-        let directory = preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Notchwork-preview") : HostConnection.defaultFile.deletingLastPathComponent()
+        let directory: URL
+        if let profile = ProcessInfo.processInfo.environment["NOTCHWORK_DATA_DIRECTORY"] {
+            guard profile.hasPrefix("/") else {
+                fputs("NOTCHWORK_DATA_DIRECTORY must be an absolute path.\n", stderr)
+                NSApp.terminate(nil); return
+            }
+            directory = URL(fileURLWithPath: profile, isDirectory: true)
+        } else {
+            directory = preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Notchwork-preview") : HostConnection.defaultFile.deletingLastPathComponent()
+        }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         lockFile = Darwin.open(directory.appendingPathComponent("host.lock").path, O_CREAT | O_RDWR, 0o600)
         guard lockFile >= 0, flock(lockFile, LOCK_EX | LOCK_NB) == 0 else { NSApp.terminate(nil); return }
         store = ActivityStore(directory: directory)
-        integrations = Integrations(store: store, restore: !preview)
         panels = PanelManager(store: store)
         panels.settings = { [weak self] in self?.showSettings() }
         server = LocalServer(file: directory.appendingPathComponent("connection.json"), handle: { [weak self] command in
@@ -42,14 +49,13 @@ import Darwin
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key); item.target = self; menu.addItem(item)
         }
         statusItem.menu = menu
-        if preview { store.loadExamples() }
-        showSettings()
+        if preview || CommandLine.arguments.contains("--settings") { showSettings() }
     }
     @objc func showSettings() {
         if settingsWindow == nil {
             let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 780, height: 750), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = "Notchwork · Control room"; window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: SettingsView(store: store, integrations: integrations))
+            window.contentView = NSHostingView(rootView: SettingsView(store: store))
             window.center(); settingsWindow = window
         }
         NSApp.activate(ignoringOtherApps: true)
@@ -58,7 +64,7 @@ import Darwin
     @objc func showActivities() { panels.open(0, focus: true) }
     @objc func quit() { NSApp.terminate(nil) }
     func applicationWillTerminate(_ notification: Notification) {
-        integrations?.stop(); panels?.stop(); store?.stop(); server?.stop()
+        panels?.stop(); store?.stop(); server?.stop()
         if lockFile >= 0 { Darwin.close(lockFile) }
     }
 }

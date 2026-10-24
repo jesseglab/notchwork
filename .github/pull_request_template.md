@@ -1,8 +1,11 @@
-## Change
-Describe the user-visible result and why it is needed.
+## Behavior
+
+What changes for a client or user? Include compatibility implications.
 
 ## Validation
-Describe the checks you ran and any remaining limitations.
 
-## License and provenance
-Confirm that contributed code and assets can be distributed under the project's noncommercial license.
+List checks actually run and their results.
+
+## Contract and docs
+
+If the API changes, update API.md, the command schema, runnable examples, and LLM context/prompts together. Keep app-specific logic in clients.

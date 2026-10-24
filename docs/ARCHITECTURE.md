@@ -2,41 +2,22 @@
 
 ```mermaid
 flowchart LR
-    A[Local apps and scripts] --> B[Loopback HTTP + token]
-    C[NotchworkKit client] --> B
-    B --> D[Activity store]
-    D --> E[Slot priority resolver]
-    E --> F[Left and right notch slots]
-    D --> G[Left and right drawers]
-    H[Saved user preferences] --> E
-    H --> G
-    I[LiquidSurfaceView] --> F
-    I --> G
-    J[Apps embedding custom SwiftUI] --> I
+    P[Client app: content and actions] --> I[Install or reuse shared runtime]
+    I --> R[Register app over local API]
+    R --> A[Publish activity and interface]
+    A --> S[Notchwork activity store]
+    S --> L[One / Two / Multiple resolver]
+    L --> C[One shared morphing container]
+    C --> E[Named UI events]
+    E --> P
 ```
 
-`NotchworkKit` contains the Codable activity model, validation, deterministic slot resolver, native surface engine, and asynchronous HTTP client. It has no external package dependencies.
+`NotchworkKit` defines the activity, registration, event and client APIs, validation, layout selection, and morphing primitives. `NotchworkHost` owns the single notch window, renderer, settings, and loopback server. There are no built-in app adapters.
 
-`NotchworkHost` owns the menu bar item, control room, panel geometry, live activity store, saved assignments, and bounded loopback server. The host can show cards from any trusted local process that speaks the protocol.
+Client applications own process management, state, application content, and actions. The host only renders a supplied interface and queues declared actions back to the originating client. Portkeeper installs or reuses the shared host and never creates a notch or edge surface of its own.
 
-`notchworkctl` is a small client for scripts. It uses the same Swift client path as native integrations.
+Notifications affect compact selection only in Multiple mode. An explicit user-triggered `present` temporarily opens a particular app full-width; collapse restores the configured layout. Source disabling and interface permissions apply to both paths.
 
-The two integration paths are distinct: the shared host receives JSON cards; an embedded surface can display any SwiftUI content in the integrating app's own process. Multiple applications should not independently claim the same screen area.
+Live state is held in memory. Settings persist. Publications coalesce at 100 ms, one timer tracks expiry, and the spring driver runs only during transitions. A client reconnects by discovering the new token, registering, and republishing its current state.
 
-## Scheduling
-
-Network I/O uses a serial utility queue. Validated commands are applied on the main actor. Activity publications coalesce at 100 ms. One timer tracks the next expiry. The spring display driver runs during surface transitions and stops at rest. Hidden expanded hosting views detach after collapse.
-
-## Pointer interaction
-
-Use `surface.containsHoverPoint(point, expanded: isOpen)` for hover decisions. Closed surfaces activate only inside the compact notch or drawer handle, including during a closing animation. Open surfaces retain their visible interaction area. Hidden windows never activate. `containsScreenPoint` remains the visible-shape hit test for click pass-through; it is not an opening trigger.
-
-## Current boundaries
-
-The host chooses the first screen with a hardware notch, otherwise the main screen. This is a top-center surface on displays without a notch, not a way to render through the physical camera area. Monitor selection and per-display layout are future work.
-
-Slots support up to three entries per side. The source registry is capped at 32 and the live store at 128. A source-management UI for forgetting old registrations is not implemented yet.
-
-## Live adapters
-
-`Integrations` owns optional player adapters and the Portkeeper directory watcher. `MusicAdapter` uses each player’s public scripting dictionary on a serial utility queue; workspace launch/quit events suspend polling while the player is closed. `ActivitySnapshot` validates identity and freshness before the Portkeeper bridge enters the normal activity store. Both paths share the existing priority resolver. The command wrapper lives in the CLI process and sends status over the same local API. See [integration setup](INTEGRATIONS.md).
+The host chooses the first notched display, otherwise the main display. The source registry is capped at 32 and the live store at 128. The loopback token grants whole-host access, not verified per-app identity.
