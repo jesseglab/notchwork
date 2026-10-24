@@ -21,7 +21,7 @@ final class HostPanel: NSPanel {
 @MainActor final class PanelState: ObservableObject {
     @Published var housing: CGFloat = 0
     @Published var topHeight: CGFloat = 28
-    @Published var wing: CGFloat = 36
+    @Published var wing: CGFloat = 44
 }
 @MainActor final class PanelManager {
     private let store: ActivityStore

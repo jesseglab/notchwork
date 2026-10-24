@@ -14,7 +14,7 @@ final class NotchGeometryTests: XCTestCase {
         let idle = geometry(active: false), active = geometry(active: true)
         XCTAssertEqual(idle.housing, 200)
         XCTAssertEqual(idle.compact.width - idle.housing, 4)
-        XCTAssertEqual(active.compact.width - active.housing, 72)
+        XCTAssertEqual(active.compact.width - active.housing, 88)
         XCTAssertEqual(active.compact.height, 34)
         XCTAssertEqual(idle.compact.midX, -850)
         XCTAssertEqual(active.compact.midX, idle.compact.midX)
@@ -36,7 +36,7 @@ final class NotchGeometryTests: XCTestCase {
             let item = NotchGeometry(screen: CGRect(x: 500, y: -900, width: 1440, height: 900), safeTop: 0,
                                      leftArea: nil, rightArea: nil, hasActivity: active, singlePresentation: true)
             XCTAssertEqual(item.housing, 0)
-            XCTAssertEqual(item.compact.size, CGSize(width: 72, height: 28))
+            XCTAssertEqual(item.compact.size, CGSize(width: 88, height: 28))
             XCTAssertEqual(item.compact.midX, 1220)
             XCTAssertEqual(item.compact.maxY, 0)
         }
