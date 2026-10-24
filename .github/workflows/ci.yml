@@ -28,7 +28,7 @@ jobs:
         run: swift build --package-path Examples/HelloNotch
       - name: Test core and host state
         # Native window/display-link timing is checked locally on a logged-in desktop.
-        run: zsh test.sh --skip 'testLeftAndRightNativeSurfaceAnchorsAndCleanup|testWebKitRendersOwnUIRoutesEventsBlocksNetworkAndClearsWhenHidden'
+        run: zsh test.sh --skip 'testLeftAndRightNativeSurfaceAnchorsAndCleanup|testWebKitRendersOwnUIRoutesEventsBlocksNetworkAndClearsWhenHidden|testLiveStatePreservesInputAndDoesNotReloadDocument'
       - name: Build development artifact
         run: zsh build.sh
       - name: Build and verify drag-and-drop installer
