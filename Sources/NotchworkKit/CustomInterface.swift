@@ -8,24 +8,25 @@ public struct ActivityInterface: Codable, Equatable, Sendable {
     public var actions: [String]
     public var width: Double?
     public var stateJSON: String?
-    public init(html: String, height: Double = 300, actions: [String] = [], width: Double? = nil, stateJSON: String? = nil) {
-        self.html = html; self.height = height; self.actions = actions; self.width = width; self.stateJSON = stateJSON
+    public var keepOpen: Bool?
+    public init(html: String, height: Double = 300, actions: [String] = [], width: Double? = nil, stateJSON: String? = nil, keepOpen: Bool? = nil) {
+        self.html = html; self.height = height; self.actions = actions; self.width = width; self.stateJSON = stateJSON; self.keepOpen = keepOpen
     }
     public func validate() throws {
         if let width, !width.isFinite || !(240...1000).contains(width) {
             throw ActivityError.invalid("Custom interface width must be 240–1000 points.")
         }
         if let stateJSON {
-            guard stateJSON.utf8.count <= 32_768,
+            guard stateJSON.utf8.count <= 2_097_152,
                   let data = stateJSON.data(using: .utf8),
                   (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil else {
-                throw ActivityError.invalid("Interface state must be valid JSON up to 32 KiB.")
+                throw ActivityError.invalid("Interface state must be valid JSON up to 2 MiB.")
             }
         }
-        guard html.utf8.count <= 32_768, height.isFinite, (80...800).contains(height), actions.count <= 20,
+        guard html.utf8.count <= 65_536, height.isFinite, (80...800).contains(height), actions.count <= 20,
               Set(actions).count == actions.count,
               actions.allSatisfy({ !$0.isEmpty && $0.utf8.count <= 64 && $0.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45,46,95].contains($0) } }) else {
-            throw ActivityError.invalid("Custom interfaces require HTML up to 32 KiB, height 80–800, and up to 20 unique action names.")
+            throw ActivityError.invalid("Custom interfaces require HTML up to 64 KiB, height 80–800, and up to 20 unique action names.")
         }
     }
 }

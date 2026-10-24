@@ -45,7 +45,7 @@ struct CustomInterfaceView: NSViewRepresentable {
         init(invoke: @escaping (String, String) -> Bool) { self.invoke = invoke }
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard message.frameInfo.isMainFrame, let body = message.body as? [String: String],
-                  let action = body["action"], let value = body["value"], value.utf8.count <= 4096 else { return }
+                  let action = body["action"], let value = body["value"], value.utf8.count <= 2_097_152 else { return }
             _ = invoke(action, value)
         }
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

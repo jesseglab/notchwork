@@ -66,7 +66,7 @@ final class LocalServer: @unchecked Sendable {
                 }
                 guard fields["origin"] == nil else { self.reply(connection, id: id, code: 403, result: HostResponse(ok: false, message: "Browser-origin requests are not supported.")); return }
                 guard fields["authorization"] == "Bearer " + self.token else { self.reply(connection, id: id, code: 401, result: HostResponse(ok: false, message: "Invalid local integration token.")); return }
-                guard fields["transfer-encoding"] == nil, let count = fields["content-length"].flatMap(Int.init), (1...65_536).contains(count) else { self.reply(connection, id: id, code: 400, result: HostResponse(ok: false, message: "A bounded Content-Length is required.")); return }
+                guard fields["transfer-encoding"] == nil, let count = fields["content-length"].flatMap(Int.init), (1...16_777_216).contains(count) else { self.reply(connection, id: id, code: 400, result: HostResponse(ok: false, message: "A bounded Content-Length is required.")); return }
                 let body = buffer[boundary.upperBound...]
                 if body.count >= count {
                     do {

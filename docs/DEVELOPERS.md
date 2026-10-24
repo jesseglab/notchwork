@@ -40,7 +40,7 @@ Registration persists the source's display name and permissions. Initial registr
 
 ## Custom controls
 
-Supply offline HTML/CSS/JavaScript in `interface`, declare action names, and call `window.notchwork.invoke(action, value)` from a user interaction. Your app receives events and executes approved functions. Notchwork never executes your commands. Escape app data inserted in HTML; keep secrets and unrestricted commands out of the payload. External network resources and navigation are blocked.
+Supply offline HTML/CSS/JavaScript in `interface`, declare action names, and call `window.notchwork.invoke(action, value)` from a user interaction. Your app receives events and executes approved functions. Notchwork never executes your commands. Escape app data inserted in HTML; keep credentials out of generic summaries. A user-requested editor may display its own configuration; validate submitted edits in the app, never execute an arbitrary UI event as a command. External network resources and navigation are blocked.
 
 Design responsively: one or two apps may share the container. Support keyboard focus and reduced motion. Keep `interface.html` unchanged and publish live model data through optional `interface.stateJSON` (runtime build 8+). The page receives `notchwork:state` events without a document reload. Changing HTML still reloads the document and loses its local input state. Opening a detached/cleared page reloads it too. Persistent UI state belongs in your app.
 
@@ -58,7 +58,7 @@ Delivery is **not exactly once**. For consequential operations, make handlers id
 4. Restart/quit the host, then relaunch it. Confirm reconnect without automatic presentation.
 5. Disable the app and Custom UI; reconnect and confirm these choices remain disabled.
 6. Kill your client and confirm TTL cleanup. Test normal shutdown cleanup separately.
-7. Reject unknown actions, unknown object IDs, and stale events. Verify logs/payloads exclude credentials and private diagnostics.
+7. Reject unknown actions, unknown object IDs, and stale events. Verify generic summaries and diagnostics exclude credentials and private output; only send selected content to explicit editor/output pages.
 8. Test runtime missing, incompatible installation, signature failure, and concurrent installers if your app bundles the runtime.
 
 [Portkeeper](https://github.com/jesseglab/portkeeper) demonstrates the app lifecycle and prerequisite installer. [The Python example](../Examples/interactive.py) demonstrates a small custom UI client.

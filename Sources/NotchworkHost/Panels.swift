@@ -78,6 +78,7 @@ final class HostPanel: NSPanel {
         if focus { windows[index].makeKeyAndOrderFront(nil) }
     }
     func close(_ index: Int) {
+        store.userPinned = false
         store.endPresentation()
         opened[index] = false; suppressed[index] = true; outside[index] = nil
         windows[index].makeFirstResponder(nil); windows[index].resignKey()
@@ -114,6 +115,7 @@ final class HostPanel: NSPanel {
             } else {
                 suppressed[index] = false
                 guard opened[index] else { continue }
+                if store.holdsPresentation { outside[index] = nil; continue }
                 if windows[index].isKeyWindow, let editor = windows[index].firstResponder as? NSTextView, editor.isEditable { continue }
                 if outside[index] == nil { outside[index] = now }
                 let date = outside[index]!.addingTimeInterval(0.65)

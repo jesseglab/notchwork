@@ -15,7 +15,7 @@ Start with `python3 scripts/doctor.py` from the repository. It reports readiness
 | Inputs reset on updates | Avoid changing `interface.html` for summary-only updates. Keep durable form state in your app. |
 | HTTP 400 | Check required fields, ID format, TTL, action URLs, and interface limits against the API/schema. Publish a full payload. |
 | HTTP 403 | Browser-origin requests are intentionally rejected. Use your native process, not a browser fetch to the host. |
-| HTTP 413 | Request body exceeds 64 KiB. Reduce embedded HTML/icon content. |
+| HTTP 413 | Request body exceeds 16 MiB. Reduce embedded HTML/icon content. |
 | “Notchwork could not be verified” | Rebuild/reinstall the complete trusted app bundle; do not disable signature verification. |
 | Incompatible installation | Preserve/move aside the old runtime yourself, quit it, and retry from the client. |
 | Sandbox cannot discover host | Automatic sandbox pairing is not implemented; see the distribution guide. |

@@ -148,8 +148,8 @@
       "properties": {
         "html": {
           "type": "string",
-          "description": "At most 32768 UTF-8 bytes, not characters; host enforces byte count.",
-          "maxLength": 32768
+          "description": "At most 65536 UTF-8 bytes; host enforces byte count.",
+          "maxLength": 65536
         },
         "height": {
           "type": "number",
@@ -180,8 +180,15 @@
             "string",
             "null"
           ],
-          "maxLength": 32768,
-          "description": "Valid JSON encoded as a string, up to 32 KiB UTF-8; delivered without reloading unchanged HTML."
+          "maxLength": 2097152,
+          "description": "Valid JSON encoded as a string, up to 2 MiB UTF-8."
+        },
+        "keepOpen": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Keep an already-open container visible while editing. Does not present or prevent manual collapse. Requires interface-forms capability."
         }
       },
       "required": [

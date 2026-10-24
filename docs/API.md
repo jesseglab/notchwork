@@ -70,7 +70,7 @@ These are fields inside the existing activity payload; publish the full activity
 | Actions | 3; titles up to 40 characters; URLs up to 2,048 characters |
 | Progress | 0 through 1 |
 | Lifetime | 2–3,600 seconds |
-| HTTP body / headers | 64 KiB / less than 4 KiB |
+| HTTP body / headers | 16 MiB / less than 4 KiB |
 | Connections | 8 simultaneous, with a 5-second deadline |
 | Live activities / registered sources | 128 / 32 |
 
@@ -131,4 +131,6 @@ The response includes `apiVersion: 2`. Re-register after host restart, then repu
 
 ### App-sized live interfaces (runtime build 8+)
 
-`interface.width` optionally requests 240–1000 points of content width; `height` sizes a single-app expanded container to its content. The host keeps its settings/collapse toolbar and display bounds. `interface.stateJSON` carries up to 32 KiB of valid JSON encoded as a string, delivered as `notchwork.state` and `notchwork:state` events without reloading unchanged HTML. The complete command remains limited to 64 KiB. Older API 2 hosts ignore these optional fields; clients depending on live state must ship/require build 8 or newer and check that `ping.capabilities` contains `interface-state`. The runtime also advertises `interface-size`. Missing capabilities mean unsupported, even if an updated app bundle exists on disk. See [custom interfaces](CUSTOM_INTERFACES.md).
+`interface.width` optionally requests 240–1000 points of content width; `height` sizes a single-app expanded container to its content. The host keeps its settings/collapse toolbar and display bounds. `interface.stateJSON` carries up to 2 MiB of valid JSON encoded as a string, delivered as `notchwork.state` and `notchwork:state` events without reloading unchanged HTML. The complete command remains limited to 16 MiB. Older API 2 hosts ignore these optional fields; clients depending on live state must ship/require build 8 or newer and check that `ping.capabilities` contains `interface-state`. The runtime also advertises `interface-size`. Missing capabilities mean unsupported, even if an updated app bundle exists on disk. See [custom interfaces](CUSTOM_INTERFACES.md).
+
+Build 9 also advertises `interface-forms`: 64 KiB HTML, 2 MiB state and event values, 8 MiB aggregate state/queue budgets, and optional `interface.keepOpen` to suppress hover dismissal while editing. Manual collapse still works. See [form lifecycle](CUSTOM_INTERFACES.md#forms-and-multi-page-interfaces-build-9).

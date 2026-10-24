@@ -36,8 +36,8 @@ class Client:
 
     def send(self, operation, **fields):
         body = json.dumps(dict(operation=operation, **fields), allow_nan=False).encode()
-        if len(body) > 65536:
-            raise NotchworkError('Request exceeds the 64 KiB body limit.')
+        if len(body) > 16_777_216:
+            raise NotchworkError('Request exceeds the 16 MiB body limit.')
         # A direct connection ignores proxy environment variables and never follows redirects.
         connection = http.client.HTTPConnection('127.0.0.1', self.port, timeout=5)
         try:
@@ -46,8 +46,8 @@ class Client:
                 'Content-Type': 'application/json',
             })
             response = connection.getresponse()
-            raw = response.read(131073)
-            if len(raw) > 131072:
+            raw = response.read(67_108_865)
+            if len(raw) > 67_108_864:
                 raise NotchworkError('Host response exceeds the client limit.')
             try:
                 result = json.loads(raw)

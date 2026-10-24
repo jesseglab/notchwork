@@ -80,3 +80,16 @@ Use one shared Notchwork background runtime. My app owns its content/actions; No
 Implement the change, add targeted tests, and document the integration. Report changed files, actual checks/results, and remaining limitations. Do not claim testing you did not run, do not publish a release unless asked, and do not change licensing.
 ```
 
+
+## Add forms without losing drafts
+
+```text
+Implement app-owned editor and confirmation pages inside Notchwork. Require the
+interface-forms capability, keep HTML stable, and send changing fields through
+stateJSON. Set keepOpen only while an editor/review/output page is active. Store
+drafts in my app, use per-page tokens to reject stale events, and include the latest
+fields with Save. Preserve focus and scroll on state updates. Validate in my app;
+keep native file pickers and clipboard handling there. Never create another notch
+window. Test cancellation, invalid fields, rapid typing followed by Save, host
+reconnection, payload limits, and user-disabled Custom UI. Do not auto-present.
+```

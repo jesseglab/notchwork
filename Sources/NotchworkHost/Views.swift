@@ -58,6 +58,7 @@ struct ActivityList: View {
                 HStack {
                     Text(card.title.uppercased()).font(.system(size: 9, design: .monospaced))
                     Spacer()
+                    Button { store.userPinned.toggle() } label: { Image(systemName: store.userPinned ? "pin.fill" : "pin") }.help(store.userPinned ? "Unpin notch panel" : "Keep notch panel open")
                     Button(action: settings) { Image(systemName: "slider.horizontal.3") }.help("Notchwork settings")
                     Button(action: close) { Image(systemName: "xmark") }.help("Collapse")
                 }.buttonStyle(.plain).foregroundStyle(mint).padding(.horizontal, 22).frame(height: 30)

@@ -11,7 +11,7 @@ final class CustomInterfaceTests: XCTestCase {
     }
     func testCustomInterfaceValidationAndBackwardCompatibility() throws {
         try card().validate()
-        var bad = card(); bad.interface!.html = String(repeating: "x", count: 32_769)
+        var bad = card(); bad.interface!.html = String(repeating: "x", count: 65_537)
         XCTAssertThrowsError(try bad.validate())
         bad = card(); bad.interface!.height = .infinity
         XCTAssertThrowsError(try bad.validate())
@@ -31,7 +31,29 @@ final class CustomInterfaceTests: XCTestCase {
         try ActivityInterface(html: "hello", width: 400, stateJSON: #"{"value":"</script> café"}"#).validate()
         XCTAssertThrowsError(try ActivityInterface(html: "", width: 100).validate())
         XCTAssertThrowsError(try ActivityInterface(html: "", stateJSON: "invalid JSON").validate())
-        XCTAssertThrowsError(try ActivityInterface(html: "", stateJSON: "\"" + String(repeating: "x", count: 32_768) + "\"").validate())
+        XCTAssertThrowsError(try ActivityInterface(html: "", stateJSON: "\"" + String(repeating: "x", count: 2_097_152) + "\"").validate())
+    }
+    @MainActor func testFormLifetimePermissionsAndBudgets() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ActivityStore(directory: directory)
+        _ = store.apply(HostCommand(operation: "register", registration: SourceRegistration(id: "test.custom", name: "Custom", customInterface: true)))
+        var activity = card(); activity.interface!.keepOpen = true
+        activity.interface!.stateJSON = "\"" + String(repeating: "x", count: 100_000) + "\""
+        XCTAssertTrue(store.apply(HostCommand(operation: "publish", activity: activity)).ok)
+        XCTAssertTrue(store.holdsPresentation)
+        XCTAssertTrue(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: String(repeating: "x", count: 100_000)))
+        store.preferences.sources[0].allowCustomInterface = false
+        XCTAssertFalse(store.holdsPresentation)
+        XCTAssertFalse(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: "test"))
+        store.preferences.sources[0].allowCustomInterface = true
+        for _ in 0..<3 { XCTAssertTrue(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: String(repeating: "x", count: 2_097_152))) }
+        XCTAssertFalse(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: String(repeating: "x", count: 2_097_152)))
+        activity.interface!.keepOpen = false
+        _ = store.apply(HostCommand(operation: "publish", activity: activity))
+        XCTAssertFalse(store.holdsPresentation)
+        store.userPinned = true; XCTAssertTrue(store.holdsPresentation)
+        store.stop()
     }
     @MainActor func testLiveStatePreservesInputAndDoesNotReloadDocument() async throws {
         _ = NSApplication.shared
@@ -70,7 +92,7 @@ final class CustomInterfaceTests: XCTestCase {
         XCTAssertFalse(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: "service"))
         store.preferences.sources[0].allowCustomInterface = true
         XCTAssertFalse(store.invoke(sourceID: "test.custom", activityID: "panel", action: "shell", value: "command"))
-        XCTAssertFalse(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: String(repeating: "x", count: 4097)))
+        XCTAssertFalse(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: String(repeating: "x", count: 2_097_153)))
         XCTAssertTrue(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: "service"))
         let response = store.apply(HostCommand(operation: "events", sourceID: "test.custom", after: 0))
         XCTAssertEqual(response.events?.first?.value, "service")

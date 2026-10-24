@@ -67,8 +67,8 @@ class ReferenceClientTests(unittest.TestCase):
         self.assertEqual(card['priority'], 'low')
         self.assertEqual(card['ttl'], 60)
         client = self.connection('http://127.0.0.1:1')
-        with self.assertRaisesRegex(NotchworkError, '64 KiB'):
-            client.publish(dict(card, title='x' * 65536))
+        with self.assertRaisesRegex(NotchworkError, '16 MiB'):
+            client.publish(dict(card, title='x' * 16_777_216))
 
 
 if __name__ == '__main__':

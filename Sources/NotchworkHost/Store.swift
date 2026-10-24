@@ -36,6 +36,8 @@ struct LayoutPreferences: Codable {
 @MainActor final class ActivityStore: ObservableObject {
     @Published var preferences: LayoutPreferences
     @Published private(set) var revision = 0
+    @Published var userPinned = false
+    var holdsPresentation: Bool { userPinned || presentationActivities.compactMap { $0 }.contains { permitsInterface($0) && $0.interface?.keepOpen == true } }
     @Published var connectionStatus = "Starting local connection…"
     private(set) var entries: [ActivityEntry] = []
     private var sequence: UInt64 = 0
@@ -88,6 +90,8 @@ struct LayoutPreferences: Codable {
             case "publish":
                 guard let card = command.activity else { throw ActivityError.invalid("Missing activity.") }
                 try card.validate()
+                let stateBytes = entries.filter { $0.activity.stableKey != card.stableKey }.reduce(0) { $0 + ($1.activity.interface?.stateJSON?.utf8.count ?? 0) }
+                guard stateBytes + (card.interface?.stateJSON?.utf8.count ?? 0) <= 8_388_608 else { throw ActivityError.invalid("Live interface states exceed the 8 MiB host budget.") }
                 let index = entries.firstIndex { $0.activity.sourceID == card.sourceID && $0.activity.id == card.id }
                 guard index != nil || entries.count < 128 else { throw ActivityError.invalid("The host supports at most 128 live activities.") }
                 if !preferences.sources.contains(where: { $0.id == card.sourceID }) {
@@ -117,7 +121,7 @@ struct LayoutPreferences: Codable {
                 }
                 events.removeAll { Date().timeIntervalSince1970 - $0.createdAt > 30 || ($0.sourceID == source && $0.sequence <= (command.after ?? 0)) }
                 return HostResponse(ok: true, message: "UI events.", events: events.filter { $0.sourceID == source && $0.sequence > (command.after ?? 0) })
-            case "ping": return HostResponse(ok: true, message: "Notchwork is ready.", apiVersion: 2, capabilities: ["interface-state", "interface-size"])
+            case "ping": return HostResponse(ok: true, message: "Notchwork is ready.", apiVersion: 2, capabilities: ["interface-state", "interface-size", "interface-forms"])
             default: throw ActivityError.invalid("Unknown operation.")
             }
             scheduleExpiry(); publishSoon()
@@ -141,11 +145,11 @@ struct LayoutPreferences: Codable {
         preferences.sources.contains { $0.id == card.sourceID && $0.enabled && $0.allowCustomInterface == true }
     }
     @discardableResult func invoke(sourceID: String, activityID: String, action: String, value: String) -> Bool {
-        guard value.utf8.count <= 4096,
+        guard value.utf8.count <= 2_097_152,
               let card = entries.first(where: { $0.activity.sourceID == sourceID && $0.activity.id == activityID && $0.expiresAt > Date() })?.activity,
               permitsInterface(card), card.interface?.actions.contains(action) == true else { return false }
         events.removeAll { Date().timeIntervalSince1970 - $0.createdAt > 30 }
-        guard events.filter({ $0.sourceID == sourceID }).count < 64, events.count < 256 else { return false }
+        guard events.filter({ $0.sourceID == sourceID }).count < 64, events.count < 256, events.reduce(value.utf8.count, { $0 + $1.value.utf8.count }) <= 8_388_608 else { return false }
         eventSequence += 1
         events.append(ActivityEvent(sequence: eventSequence, sourceID: sourceID, activityID: activityID, action: action, value: value))
         for id in eventWaiters.keys.filter({ eventWaiters[$0]?.0.sourceID == sourceID }) { finishWaiter(id) }

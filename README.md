@@ -73,7 +73,7 @@ There are no built-in Music, Spotify, or Portkeeper adapters. [Portkeeper](https
 
 ## Status and compatibility
 
-The default branch contains the API 2 development line (`0.2.0`, build 8). The HTTP route remains `/v1/activity`; discover capability from `ping.apiVersion`, not the URL. Older release tags do not provide this contract. Pin a tested commit for your app. Local build artifacts are ad-hoc signed, not notarized public releases.
+The default branch contains the API 2 development line (`0.2.0`, build 9). The HTTP route remains `/v1/activity`; discover capability from `ping.apiVersion`, not the URL. Older release tags do not provide this contract. Pin a tested commit for your app. Local build artifacts are ad-hoc signed, not notarized public releases.
 
 The connection is local and authenticated with a per-launch bearer token. It trusts clients running under the same macOS account; source IDs are labels, not verified app identities. Sandboxed pairing is not implemented. See [security](SECURITY.md).
 
