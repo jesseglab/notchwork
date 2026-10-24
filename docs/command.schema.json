@@ -166,6 +166,22 @@
             "maxLength": 64,
             "minLength": 1
           }
+        },
+        "width": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 240,
+          "maximum": 1000
+        },
+        "stateJSON": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 32768,
+          "description": "Valid JSON encoded as a string, up to 32 KiB UTF-8; delivered without reloading unchanged HTML."
         }
       },
       "required": [

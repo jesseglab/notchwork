@@ -17,11 +17,13 @@ struct CustomInterfaceView: NSViewRepresentable {
         view.uiDelegate = context.coordinator
         view.allowsLinkPreview = false
         view.setValue(false, forKey: "drawsBackground")
+        view.stateJSON = interface.stateJSON
         view.document = Self.document(interface.html)
         return view
     }
     func updateNSView(_ view: IsolatedWebView, context: Context) {
         context.coordinator.invoke = invoke
+        view.stateJSON = interface.stateJSON
         view.document = Self.document(interface.html)
     }
     static func dismantleNSView(_ view: IsolatedWebView, coordinator: Coordinator) {
@@ -34,7 +36,7 @@ struct CustomInterfaceView: NSViewRepresentable {
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>html,body{margin:0;background:transparent;color:white;color-scheme:dark}*{box-sizing:border-box}</style>
-        <script>window.notchwork=Object.freeze({invoke:(action,value='')=>{if(typeof action==='string'&&typeof value==='string')window.webkit.messageHandlers.notchwork.postMessage({action,value})}});</script>
+        <script>window.__notchworkState=null;window.__notchworkReceiveState=(encoded)=>{window.__notchworkState=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encoded),c=>c.charCodeAt(0))));window.dispatchEvent(new CustomEvent('notchwork:state',{detail:window.__notchworkState}))};window.notchwork=Object.freeze({get state(){return window.__notchworkState},invoke:(action,value='')=>{if(typeof action==='string'&&typeof value==='string')window.webkit.messageHandlers.notchwork.postMessage({action,value})}});</script>
         </head><body>\(html)</body></html>
         """
     }
@@ -46,6 +48,9 @@ struct CustomInterfaceView: NSViewRepresentable {
                   let action = body["action"], let value = body["value"], value.utf8.count <= 4096 else { return }
             _ = invoke(action, value)
         }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            (webView as? IsolatedWebView)?.deliverState()
+        }
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             decisionHandler(navigationAction.navigationType == .other && navigationAction.request.url?.absoluteString == "about:blank" ? .allow : .cancel)
         }
@@ -55,6 +60,12 @@ struct CustomInterfaceView: NSViewRepresentable {
     }
 }
 final class IsolatedWebView: WKWebView {
+    var stateJSON: String? { didSet { if stateJSON != oldValue { deliverState() } } }
+    func deliverState() {
+        guard window != nil, !isLoading else { return }
+        let encoded = Data((stateJSON ?? "null").utf8).base64EncodedString()
+        evaluateJavaScript("window.__notchworkReceiveState && window.__notchworkReceiveState('" + encoded + "')", completionHandler: nil)
+    }
     var document = "" { didSet { if document != oldValue && window != nil { loadHTMLString(document, baseURL: nil) } } }
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()

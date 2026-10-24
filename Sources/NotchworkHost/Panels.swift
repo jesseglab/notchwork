@@ -86,10 +86,13 @@ final class HostPanel: NSPanel {
     private func layout(animated: Bool) {
         guard let screen = NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 }) ?? NSScreen.main else { return }
         let frame = screen.frame
+        let cards = store.presentationActivities
+        let interface = cards.count == 1 ? cards[0].flatMap { store.permitsInterface($0) ? $0.interface : nil } : nil
+        let interfaceSize = interface.map { CGSize(width: $0.width ?? 400, height: $0.height) }
         let geometry = NotchGeometry(screen: frame, safeTop: screen.safeAreaInsets.top,
                                      leftArea: screen.auxiliaryTopLeftArea, rightArea: screen.auxiliaryTopRightArea,
                                      hasActivity: store.visibleActivities.contains { $0 != nil },
-                                     singlePresentation: store.presentationActivities.count == 1)
+                                     singlePresentation: cards.count == 1, interfaceSize: interfaceSize)
         if state.housing != geometry.housing { state.housing = geometry.housing }
         if state.topHeight != geometry.topHeight { state.topHeight = geometry.topHeight }
         if state.wing != geometry.wing { state.wing = geometry.wing }

@@ -128,3 +128,7 @@ The response includes `apiVersion: 2`. Re-register after host restart, then repu
 ```
 
 `present` requires an enabled, unexpired published activity. It temporarily shows that activity full-width in the expanded container, even if the app is not assigned to a compact position. It never modifies saved assignments. Pure notification updates must use `publish` instead.
+
+### App-sized live interfaces (runtime build 8+)
+
+`interface.width` optionally requests 240–1000 points of content width; `height` sizes a single-app expanded container to its content. The host keeps its settings/collapse toolbar and display bounds. `interface.stateJSON` carries up to 32 KiB of valid JSON encoded as a string, delivered as `notchwork.state` and `notchwork:state` events without reloading unchanged HTML. The complete command remains limited to 64 KiB. Older API 2 hosts ignore these optional fields; clients depending on live state must ship/require build 8 or newer and check that `ping.capabilities` contains `interface-state`. The runtime also advertises `interface-size`. Missing capabilities mean unsupported, even if an updated app bundle exists on disk. See [custom interfaces](CUSTOM_INTERFACES.md).

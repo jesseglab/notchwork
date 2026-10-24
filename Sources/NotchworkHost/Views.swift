@@ -52,6 +52,23 @@ struct ActivityList: View {
     var settings: () -> Void
     var cards: [NotchActivity] { store.presentationActivities.compactMap { $0 } }
     var body: some View {
+        if store.presentationActivities.count == 1, let card = cards.first,
+           let interface = card.interface, store.permitsInterface(card) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(card.title.uppercased()).font(.system(size: 9, design: .monospaced))
+                    Spacer()
+                    Button(action: settings) { Image(systemName: "slider.horizontal.3") }.help("Notchwork settings")
+                    Button(action: close) { Image(systemName: "xmark") }.help("Collapse")
+                }.buttonStyle(.plain).foregroundStyle(mint).padding(.horizontal, 22).frame(height: 30)
+                CustomInterfaceView(interface: interface) { action, value in
+                    store.invoke(sourceID: card.sourceID, activityID: card.id, action: action, value: value)
+                }.id(card.stableKey).padding(.horizontal, 12)
+                Spacer(minLength: 10)
+            }.background(.black).preferredColorScheme(.dark)
+        } else { standardContent }
+    }
+    private var standardContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
@@ -100,7 +117,20 @@ struct ActivityList: View {
             CustomInterfaceView(interface: interface) { action, value in
                 store.invoke(sourceID: card.sourceID, activityID: card.id, action: action, value: value)
             }.id(card.stableKey).frame(height: interface.height).clipShape(RoundedRectangle(cornerRadius: 16))
-        } else { ActivityCard(card: card, dismiss: { store.dismiss(card) }) }
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                if card.interface != nil {
+                    Text("App controls are turned off for \(card.sourceName).").font(.system(size: 12))
+                    Button("Enable \(card.sourceName) controls") {
+                        if let index = store.preferences.sources.firstIndex(where: { $0.id == card.sourceID }) {
+                            store.preferences.sources[index].allowCustomInterface = true
+                            store.save()
+                        }
+                    }.buttonStyle(.borderedProminent)
+                }
+                ActivityCard(card: card, dismiss: { store.dismiss(card) })
+            }
+        }
     }
 
 }

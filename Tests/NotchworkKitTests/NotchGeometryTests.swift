@@ -41,6 +41,15 @@ final class NotchGeometryTests: XCTestCase {
             XCTAssertEqual(item.compact.maxY, 0)
         }
     }
+    func testAppInterfaceSizeUsesItsOwnContentDimensions() {
+        let item = NotchGeometry(screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), safeTop: 32,
+                                 leftArea: CGRect(x: 0, y: 1085, width: 771.5, height: 32),
+                                 rightArea: CGRect(x: 956.5, y: 1085, width: 771.5, height: 32),
+                                 hasActivity: true, singlePresentation: true, interfaceSize: CGSize(width: 400, height: 590))
+        XCTAssertEqual(item.expanded.size, CGSize(width: 424, height: 662))
+        XCTAssertEqual(item.compact.width, 273)
+        XCTAssertEqual(item.compact.midX, item.expanded.midX)
+    }
     func testExpandedSurfaceFitsNarrowScreen() {
         let screen = CGRect(x: 0, y: 0, width: 800, height: 600)
         let item = NotchGeometry(screen: screen, safeTop: 0, leftArea: nil, rightArea: nil,

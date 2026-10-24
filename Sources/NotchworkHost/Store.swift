@@ -117,7 +117,7 @@ struct LayoutPreferences: Codable {
                 }
                 events.removeAll { Date().timeIntervalSince1970 - $0.createdAt > 30 || ($0.sourceID == source && $0.sequence <= (command.after ?? 0)) }
                 return HostResponse(ok: true, message: "UI events.", events: events.filter { $0.sourceID == source && $0.sequence > (command.after ?? 0) })
-            case "ping": return HostResponse(ok: true, message: "Notchwork is ready.", apiVersion: 2)
+            case "ping": return HostResponse(ok: true, message: "Notchwork is ready.", apiVersion: 2, capabilities: ["interface-state", "interface-size"])
             default: throw ActivityError.invalid("Unknown operation.")
             }
             scheduleExpiry(); publishSoon()

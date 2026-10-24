@@ -6,10 +6,22 @@ public struct ActivityInterface: Codable, Equatable, Sendable {
     public var html: String
     public var height: Double
     public var actions: [String]
-    public init(html: String, height: Double = 300, actions: [String] = []) {
-        self.html = html; self.height = height; self.actions = actions
+    public var width: Double?
+    public var stateJSON: String?
+    public init(html: String, height: Double = 300, actions: [String] = [], width: Double? = nil, stateJSON: String? = nil) {
+        self.html = html; self.height = height; self.actions = actions; self.width = width; self.stateJSON = stateJSON
     }
     public func validate() throws {
+        if let width, !width.isFinite || !(240...1000).contains(width) {
+            throw ActivityError.invalid("Custom interface width must be 240–1000 points.")
+        }
+        if let stateJSON {
+            guard stateJSON.utf8.count <= 32_768,
+                  let data = stateJSON.data(using: .utf8),
+                  (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil else {
+                throw ActivityError.invalid("Interface state must be valid JSON up to 32 KiB.")
+            }
+        }
         guard html.utf8.count <= 32_768, height.isFinite, (80...800).contains(height), actions.count <= 20,
               Set(actions).count == actions.count,
               actions.allSatisfy({ !$0.isEmpty && $0.utf8.count <= 64 && $0.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45,46,95].contains($0) } }) else {

@@ -12,7 +12,7 @@ schema = json.loads((root / 'docs/command.schema.json').read_text())
 Draft202012Validator.check_schema(schema)
 validator = Draft202012Validator(schema)
 card = json.loads((root / 'Examples/build.json').read_text())
-requests = [dict(operation='ping'), dict(operation='publish', activity=card),
+requests = [dict(operation='publish', activity=activity(SOURCE, 'Example', 'Live', interface=dict(html='<input>', height=590, width=400, actions=[], stateJSON='{"count":1}'))), dict(operation='ping'), dict(operation='publish', activity=card),
             dict(operation='register', registration=dict(id=SOURCE, name='Example', customInterface=True)),
             dict(operation='publish', activity=activity(SOURCE, 'Example', 'Ready', interface=dict(html=HTML, height=220, actions=['acknowledge']))),
             dict(operation='events', sourceID=SOURCE, after=0, wait=True),

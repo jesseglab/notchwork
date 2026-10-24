@@ -42,7 +42,7 @@ Registration persists the source's display name and permissions. Initial registr
 
 Supply offline HTML/CSS/JavaScript in `interface`, declare action names, and call `window.notchwork.invoke(action, value)` from a user interaction. Your app receives events and executes approved functions. Notchwork never executes your commands. Escape app data inserted in HTML; keep secrets and unrestricted commands out of the payload. External network resources and navigation are blocked.
 
-Design responsively: one or two apps may share the container. Support keyboard focus and reduced motion. Keep `interface.html` unchanged when only summary state changes; changing it reloads the document and loses its local input state. Opening a detached/cleared page reloads it too. Persistent UI state belongs in your app.
+Design responsively: one or two apps may share the container. Support keyboard focus and reduced motion. Keep `interface.html` unchanged and publish live model data through optional `interface.stateJSON` (runtime build 8+). The page receives `notchwork:state` events without a document reload. Changing HTML still reloads the document and loses its local input state. Opening a detached/cleared page reloads it too. Persistent UI state belongs in your app.
 
 ## Event handling
 

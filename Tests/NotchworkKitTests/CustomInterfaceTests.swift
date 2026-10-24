@@ -25,6 +25,43 @@ final class CustomInterfaceTests: XCTestCase {
         old.removeValue(forKey: "interface"); old.removeValue(forKey: "iconPNG")
         XCTAssertNil(try JSONDecoder().decode(NotchActivity.self, from: JSONSerialization.data(withJSONObject: old)).interface)
     }
+    func testOptionalSizingAndLiveStateValidation() throws {
+        let legacy = try JSONDecoder().decode(ActivityInterface.self, from: Data(#"{"html":"hello","height":300,"actions":[]}"#.utf8))
+        XCTAssertNil(legacy.width); XCTAssertNil(legacy.stateJSON)
+        try ActivityInterface(html: "hello", width: 400, stateJSON: #"{"value":"</script> café"}"#).validate()
+        XCTAssertThrowsError(try ActivityInterface(html: "", width: 100).validate())
+        XCTAssertThrowsError(try ActivityInterface(html: "", stateJSON: "invalid JSON").validate())
+        XCTAssertThrowsError(try ActivityInterface(html: "", stateJSON: "\"" + String(repeating: "x", count: 32_768) + "\"").validate())
+    }
+    @MainActor func testLiveStatePreservesInputAndDoesNotReloadDocument() async throws {
+        _ = NSApplication.shared
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let coordinator = CustomInterfaceView.Coordinator { _, _ in true }
+        let web = IsolatedWebView(frame: CGRect(x: 0, y: 0, width: 400, height: 300), configuration: configuration)
+        web.navigationDelegate = coordinator
+        web.stateJSON = #"{"count":1}"#
+        web.document = CustomInterfaceView.document("<input id='filter'><script>window.pageIdentity=42</script>")
+        let window = NSWindow(contentRect: web.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = web; window.orderFrontRegardless()
+        defer { window.orderOut(nil); window.contentView = nil }
+        for _ in 0..<50 {
+            if (try? await web.evaluateJavaScript("window.notchwork?.state?.count")) as? Int == 1 { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        _ = try await web.evaluateJavaScript("document.getElementById('filter').value='API';window.pageIdentity=99")
+        web.stateJSON = #"{"count":2,"text":"</script> café"}"#
+        for _ in 0..<30 {
+            if (try? await web.evaluateJavaScript("notchwork.state.count")) as? Int == 2 { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let count = try await web.evaluateJavaScript("notchwork.state.count") as? Int
+        let text = try await web.evaluateJavaScript("notchwork.state.text") as? String
+        let filter = try await web.evaluateJavaScript("document.getElementById('filter').value") as? String
+        let identity = try await web.evaluateJavaScript("window.pageIdentity") as? Int
+        XCTAssertEqual(count, 2); XCTAssertEqual(text, "</script> café")
+        XCTAssertEqual(filter, "API"); XCTAssertEqual(identity, 99)
+    }
     @MainActor func testCallbacksRequirePermissionLiveActivityAndDeclaredAction() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let store = ActivityStore(directory: directory)
@@ -77,6 +114,7 @@ final class CustomInterfaceTests: XCTestCase {
         try await Task.sleep(nanoseconds: 50_000_000)
         let health = try await client.send(HostCommand(operation: "ping"))
         XCTAssertTrue(health.ok)
+        XCTAssertTrue(health.capabilities?.contains("interface-state") == true)
         XCTAssertTrue(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: "local-service"))
         let events = try await waiting.value
         XCTAssertEqual(events.first?.value, "local-service")

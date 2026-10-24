@@ -9,7 +9,7 @@ struct NotchGeometry {
     let expanded: CGRect
 
     init(screen: CGRect, safeTop: CGFloat, leftArea: CGRect?, rightArea: CGRect?,
-         hasActivity: Bool, singlePresentation: Bool) {
+         hasActivity: Bool, singlePresentation: Bool, interfaceSize: CGSize? = nil) {
         let gap = leftArea.flatMap { left in rightArea.map { $0.minX - left.maxX } } ?? 0
         let hasNotch = safeTop > 0 && gap > 0
         housing = hasNotch ? gap : 0
@@ -21,8 +21,10 @@ struct NotchGeometry {
         compact = CGRect(x: center - width / 2, y: screen.maxY - height, width: width, height: height)
         // Both frames share an anchor so the morph never slides away from the camera.
         let availableWidth = max(width, 2 * min(center - screen.minX, screen.maxX - center) - 24)
-        let expandedWidth = max(width, min(singlePresentation ? 560 : 920, availableWidth))
-        let expandedHeight = min(480, screen.height - 24)
+        let desiredWidth = interfaceSize.map { $0.width + 24 } ?? (singlePresentation ? 560 : 920)
+        let expandedWidth = max(width, min(desiredWidth, availableWidth))
+        let desiredHeight = interfaceSize == nil ? 480 : interfaceSize!.height + topHeight + 40
+        let expandedHeight = min(desiredHeight, screen.height - 24)
         expanded = CGRect(x: center - expandedWidth / 2, y: screen.maxY - expandedHeight,
                           width: expandedWidth, height: expandedHeight)
     }

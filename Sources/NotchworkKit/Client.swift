@@ -16,7 +16,8 @@ public struct HostResponse: Codable, Sendable {
     public var message: String
     public var apiVersion: Int?
     public var events: [ActivityEvent]?
-    public init(ok: Bool, message: String, events: [ActivityEvent]? = nil, apiVersion: Int? = nil) { self.ok = ok; self.message = message; self.events = events; self.apiVersion = apiVersion }
+    public var capabilities: [String]?
+    public init(ok: Bool, message: String, events: [ActivityEvent]? = nil, apiVersion: Int? = nil, capabilities: [String]? = nil) { self.ok = ok; self.message = message; self.events = events; self.apiVersion = apiVersion; self.capabilities = capabilities }
 }
 public struct SourceRegistration: Codable, Sendable {
     public var id: String
