@@ -7,14 +7,14 @@ private func icon(_ name: String) -> String { NSImage(systemSymbolName: name, ac
 struct NotchHeader: View {
     @ObservedObject var store: ActivityStore
     @ObservedObject var state: PanelState
-    let open: () -> Void
+    let open: (NotchSide) -> Void
     var body: some View {
         HStack(spacing: 0) {
             let card = store.visibleActivities.first ?? nil
-            SlotButton(card: card, width: state.wing, height: state.topHeight, open: open)
+            SlotButton(card: card, width: state.wing, height: state.topHeight, open: { open(.left) })
             Color.clear.frame(width: state.housing).accessibilityHidden(true)
             if store.preferences.mode == .single {
-                Button(action: open) {
+                Button(action: { open(.right) }) {
                     Group {
                         if let card {
                             Circle().fill(card.priority == .urgent ? Color.orange : mint).frame(width: 4, height: 4)
@@ -24,7 +24,7 @@ struct NotchHeader: View {
                     .help(card?.title ?? "Configure Notchwork")
                     .accessibilityLabel(card.map { $0.sourceName + ": " + $0.title } ?? "Configure Notchwork")
             } else {
-                SlotButton(card: store.slots(.right).first ?? nil, width: state.wing, height: state.topHeight, open: open)
+                SlotButton(card: store.slots(.right).first ?? nil, width: state.wing, height: state.topHeight, open: { open(.right) })
             }
         }.frame(maxWidth: .infinity).frame(height: state.topHeight).foregroundStyle(mint)
     }
@@ -50,6 +50,7 @@ struct ActivityList: View {
     @ObservedObject var store: ActivityStore
     var close: () -> Void
     var settings: () -> Void
+    var pinChanged: () -> Void = {}
     var cards: [NotchActivity] { store.presentationActivities.compactMap { $0 } }
     var body: some View {
         if store.presentationActivities.count == 1, let card = cards.first,
@@ -58,7 +59,7 @@ struct ActivityList: View {
                 HStack {
                     Text(card.title.uppercased()).font(.system(size: 9, design: .monospaced))
                     Spacer()
-                    Button { store.userPinned.toggle() } label: { Image(systemName: store.userPinned ? "pin.fill" : "pin") }.help(store.userPinned ? "Unpin notch panel" : "Keep notch panel open")
+                    Button { store.userPinned.toggle(); pinChanged() } label: { Image(systemName: store.userPinned ? "pin.fill" : "pin") }.help(store.userPinned ? "Unpin notch panel" : "Keep notch panel open")
                     Button(action: settings) { Image(systemName: "slider.horizontal.3") }.help("Notchwork settings")
                     Button(action: close) { Image(systemName: "xmark") }.help("Collapse")
                 }.buttonStyle(.plain).foregroundStyle(mint).padding(.horizontal, 22).frame(height: 30)

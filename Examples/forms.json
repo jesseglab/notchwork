@@ -14,8 +14,9 @@
     "html": "<style>body{padding:20px;font:14px system-ui}input,button{font:inherit;padding:8px}label{display:block;margin-bottom:12px}</style><label>Label <input id='label' aria-label='Label'></label><button id='save'>Save</button><p id='status'></p><script>let token;function sync(s){if(!s)return;if(token!==s.token){token=s.token;document.getElementById('label').value=s.label}document.getElementById('status').textContent=s.status||''}window.addEventListener('notchwork:state',e=>sync(e.detail));sync(notchwork.state);document.getElementById('save').onclick=()=>notchwork.invoke('save',JSON.stringify({token,label:document.getElementById('label').value}));</script>",
     "height": 220,
     "width": 400,
-    "actions": ["save"],
-    "stateJSON": "{\"token\":\"example-page-1\",\"label\":\"My label\",\"status\":\"Waiting for your client to save\"}",
-    "keepOpen": true
+    "actions": [
+      "save"
+    ],
+    "stateJSON": "{\"token\":\"example-page-1\",\"label\":\"My label\",\"status\":\"Waiting for your client to save\"}"
   }
 }

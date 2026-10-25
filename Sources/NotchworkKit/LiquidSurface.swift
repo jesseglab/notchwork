@@ -94,6 +94,7 @@ enum LiquidShape {
     public private(set) var presentedFrame = CGRect.zero
     public var onSettled: (() -> Void)?
     public var onPointerEntered: (() -> Void)?
+    public var onPointerExited: (() -> Void)?
 
     public init<Expanded: View, Compact: View>(edge: LiquidEdge, expanded: Expanded, compact: Compact) {
         self.edge = edge
@@ -240,6 +241,7 @@ enum LiquidShape {
         let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self)
         addTrackingArea(area); tracking = area
     }
+    public override func mouseExited(with event: NSEvent) { onPointerExited?() }
     public override func mouseEntered(with event: NSEvent) {
         if containsHoverPoint(NSEvent.mouseLocation, expanded: false) { onPointerEntered?() }
     }

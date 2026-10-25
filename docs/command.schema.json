@@ -188,7 +188,7 @@
             "boolean",
             "null"
           ],
-          "description": "Keep an already-open container visible while editing. Does not present or prevent manual collapse. Requires interface-forms capability."
+          "description": "Legacy hint accepted for compatibility. Ignored by hosts advertising user-controlled-pinning; only the user pin suppresses pointer-exit dismissal."
         }
       },
       "required": [

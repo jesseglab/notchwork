@@ -24,6 +24,8 @@ A small macOS background app. A local integration API. Settings for the apps you
 
 **Small when you’re working. Roomy when you need it.** The collapsed container follows the physical camera notch, with padded app icons at its sides. Titles and controls appear when expanded. Displays without a camera notch use a small top-center handle.
 
+Hover the left icon to open the left app’s full interface, or the right icon for the right app. Moving away closes it again; use the pin button when you want it to stay open. This behavior is available in the 0.2.1 development source (build 10).
+
 Choose the mode in settings and enable the apps and custom interfaces you want. Notchwork has no built-in Music, Spotify, or Portkeeper adapters: apps connect through the same API.
 
 ## The important things get a turn

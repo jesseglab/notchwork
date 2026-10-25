@@ -86,7 +86,8 @@ Implement the change, add targeted tests, and document the integration. Report c
 ```text
 Implement app-owned editor and confirmation pages inside Notchwork. Require the
 interface-forms capability, keep HTML stable, and send changing fields through
-stateJSON. Set keepOpen only while an editor/review/output page is active. Store
+stateJSON. Respect pointer-exit dismissal and user-controlled pinning; do not use
+keepOpen to trap the container open. Store
 drafts in my app, use per-page tokens to reject stale events, and include the latest
 fields with Save. Preserve focus and scroll on state updates. Validate in my app;
 keep native file pickers and clipboard handling there. Never create another notch

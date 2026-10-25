@@ -8,6 +8,7 @@ public struct ActivityInterface: Codable, Equatable, Sendable {
     public var actions: [String]
     public var width: Double?
     public var stateJSON: String?
+    /// Legacy hint, ignored by hosts with user-controlled-pinning. Only the user can pin the container.
     public var keepOpen: Bool?
     public init(html: String, height: Double = 300, actions: [String] = [], width: Double? = nil, stateJSON: String? = nil, keepOpen: Bool? = nil) {
         self.html = html; self.height = height; self.actions = actions; self.width = width; self.stateJSON = stateJSON; self.keepOpen = keepOpen

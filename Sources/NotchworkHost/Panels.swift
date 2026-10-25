@@ -28,7 +28,8 @@ final class HostPanel: NSPanel {
     let state = PanelState()
     private var windows: [HostPanel] = []
     private var surfaces: [LiquidSurfaceView] = []
-    private var opened = [false]
+    private(set) var opened = [false]
+    private(set) var compactFrame = CGRect.zero
     private var suppressed = [false]
     private var outside: [Date?] = [nil]
     private var timer: Timer?
@@ -37,11 +38,11 @@ final class HostPanel: NSPanel {
     var settings: (() -> Void)?
     init(store: ActivityStore) {
         self.store = store
-        let header = NotchHeader(store: store, state: state, open: { [weak self] in self?.open(0, focus: true) })
+        let header = NotchHeader(store: store, state: state, open: { [weak self] side in self?.openSide(side, focus: true) })
         let notch = LiquidSurfaceView(edge: .notch,
             expanded: VStack(spacing: 0) {
                 header
-                ActivityList(store: store, close: { [weak self] in self?.close(0) }, settings: { [weak self] in self?.settings?() })
+                ActivityList(store: store, close: { [weak self] in self?.close(0) }, settings: { [weak self] in self?.settings?() }, pinChanged: { [weak self] in self?.pointerMoved() })
             }, compact: header)
         surfaces = [notch]
         for (index, title) in ["Notchwork · Notch"].enumerated() {
@@ -50,7 +51,13 @@ final class HostPanel: NSPanel {
             surfaces[index].onPointerEntered = { [weak self] in
                 guard let self, self.store.preferences.hoverToOpen, !self.suppressed[index],
                       self.surfaces[index].containsHoverPoint(NSEvent.mouseLocation, expanded: false) else { return }
-                self.open(index)
+                self.openSide(self.side(at: NSEvent.mouseLocation))
+            }
+            surfaces[index].onPointerExited = { [weak self] in self?.pointerMoved() }
+            surfaces[index].onSettled = { [weak self] in
+                guard let self else { return }
+                if !self.opened[index] { self.store.endPresentation() }
+                self.pointerMoved()
             }
             windows.append(panel)
         }
@@ -64,8 +71,20 @@ final class HostPanel: NSPanel {
             observers.append((center, observer))
         }
         store.onPresent = { [weak self] in self?.open(0, focus: true) }
-        store.onLayoutChanged = { [weak self] in self?.layout(animated: true) }
+        store.onLayoutChanged = { [weak self] in
+            guard let self else { return }
+            if self.opened[0], self.store.presentedKey != nil, self.store.presentationActivities.allSatisfy({ $0 == nil }) {
+                self.close(0)
+            } else { self.layout(animated: true) }
+        }
         layout(animated: false)
+    }
+    func side(at point: CGPoint) -> NotchSide { point.x < compactFrame.midX ? .left : .right }
+    func openSide(_ side: NotchSide, focus: Bool = false) {
+        let previous = store.presentedKey
+        guard store.selectPresentation(side: side) else { return }
+        if opened[0], previous != store.presentedKey { layout(animated: true) }
+        open(0, focus: focus)
     }
     func open(_ index: Int, focus: Bool = false) {
         guard windows.indices.contains(index) else { return }
@@ -78,9 +97,11 @@ final class HostPanel: NSPanel {
         if focus { windows[index].makeKeyAndOrderFront(nil) }
     }
     func close(_ index: Int) {
-        store.userPinned = false
-        store.endPresentation()
+        guard windows.indices.contains(index), opened[index] else { return }
         opened[index] = false; suppressed[index] = true; outside[index] = nil
+        store.userPinned = false
+        timer?.invalidate(); timer = nil
+        // Keep the selected page through the closing morph; detach before resetting it.
         windows[index].makeFirstResponder(nil); windows[index].resignKey()
         layout(animated: true)
     }
@@ -98,33 +119,38 @@ final class HostPanel: NSPanel {
         if state.topHeight != geometry.topHeight { state.topHeight = geometry.topHeight }
         if state.wing != geometry.wing { state.wing = geometry.wing }
         let compact = geometry.compact, expanded = geometry.expanded
+        compactFrame = compact
         let animate = animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         surfaces[0].move(compact: compact, expanded: expanded, open: opened[0], animated: animate)
         windows[0].orderFrontRegardless()
     }
-    private func pointerMoved() {
+    func pointerMoved(at location: CGPoint? = nil, now: Date = Date()) {
         guard NSApp.modalWindow == nil, !NSApp.windows.contains(where: { $0.isVisible && $0.className.contains("Menu") }) else { return }
         timer?.invalidate(); timer = nil
-        let point = NSEvent.mouseLocation, now = Date()
+        let point = location ?? NSEvent.mouseLocation
         var deadline: Date?
         for index in windows.indices where windows[index].isVisible {
             surfaces[index].updatePointerPassThrough()
             if surfaces[index].containsHoverPoint(point, expanded: opened[index]) {
                 outside[index] = nil
-                if store.preferences.hoverToOpen && !suppressed[index] { open(index) }
+                if store.preferences.hoverToOpen && !suppressed[index],
+                   surfaces[index].containsHoverPoint(point, expanded: false) {
+                    openSide(side(at: point))
+                }
             } else {
                 suppressed[index] = false
                 guard opened[index] else { continue }
                 if store.holdsPresentation { outside[index] = nil; continue }
-                if windows[index].isKeyWindow, let editor = windows[index].firstResponder as? NSTextView, editor.isEditable { continue }
                 if outside[index] == nil { outside[index] = now }
-                let date = outside[index]!.addingTimeInterval(0.65)
+                let date = outside[index]!.addingTimeInterval(0.18)
                 if date <= now { close(index) }
                 else { deadline = min(deadline ?? date, date) }
             }
         }
         if let deadline {
-            timer = Timer.scheduledTimer(withTimeInterval: max(0.01, deadline.timeIntervalSinceNow), repeats: false) { [weak self] _ in MainActor.assumeIsolated { self?.pointerMoved() } }
+            let pending = Timer(timeInterval: max(0.01, deadline.timeIntervalSinceNow), repeats: false) { [weak self] _ in MainActor.assumeIsolated { self?.pointerMoved() } }
+            timer = pending
+            RunLoop.main.add(pending, forMode: .common)
         }
     }
     func stop() {

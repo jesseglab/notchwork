@@ -16,7 +16,7 @@ flowchart LR
 
 Client applications own process management, state, application content, and actions. The host only renders a supplied interface and queues declared actions back to the originating client. Portkeeper installs or reuses the shared host and never creates a notch or edge surface of its own.
 
-Notifications affect compact selection only in Multiple mode. An explicit user-triggered `present` temporarily opens a particular app full-width; collapse restores the configured layout. Source disabling and interface permissions apply to both paths.
+Hovering a compact side selects its app and opens only that interface at its requested dimensions. The selection stays stable through background priority changes until the user switches sides or collapses. Pointer exit starts a short dismissal delay; only the user pin can hold the panel open. Notifications affect compact selection only in Multiple mode. An explicit user-triggered `present` temporarily opens a particular app full-width; collapse restores the configured layout. Source disabling and interface permissions apply to both paths.
 
 Live state is held in memory. Settings persist. Publications coalesce at 100 ms, one timer tracks expiry, and the spring driver runs only during transitions. A client reconnects by discovering the new token, registering, and republishing its current state.
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — Hover behavior (development)
+
+- Hovering or clicking either compact side opens only that app, at its requested interface dimensions.
+- One mode opens the selected app from either side; empty/disabled sides do not open their neighbour.
+- Pointer exit collapses after 180 ms, including forms and focused editors; only the explicit user pin holds the panel open.
+- Legacy client `keepOpen` remains accepted but cannot pin the host. Capabilities advertise `side-hover` and `user-controlled-pinning`.
+- Preserve the selected interface through the closing morph instead of rebuilding the combined two-app view.
+
 ## 0.2.0 — 2026-10-24 (development preview)
 
 - Shared runtime now owns only the generic notch container, settings, and API; built-in client adapters were removed.

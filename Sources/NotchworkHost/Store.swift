@@ -37,7 +37,7 @@ struct LayoutPreferences: Codable {
     @Published var preferences: LayoutPreferences
     @Published private(set) var revision = 0
     @Published var userPinned = false
-    var holdsPresentation: Bool { userPinned || presentationActivities.compactMap { $0 }.contains { permitsInterface($0) && $0.interface?.keepOpen == true } }
+    var holdsPresentation: Bool { userPinned }
     @Published var connectionStatus = "Starting local connection…"
     private(set) var entries: [ActivityEntry] = []
     private var sequence: UInt64 = 0
@@ -55,7 +55,19 @@ struct LayoutPreferences: Codable {
         if let key = presentedKey,
            let entry = entries.first(where: { $0.activity.sourceID + "/" + $0.activity.id == key && $0.expiresAt > Date() }),
            preferences.sources.contains(where: { $0.id == entry.activity.sourceID && $0.enabled }) { return [entry.activity] }
-        return visibleActivities
+        // A removed/disabled selection must not reveal another app mid-interaction.
+        return presentedKey == nil ? visibleActivities : [nil]
+    }
+    @discardableResult func selectPresentation(side: NotchSide) -> Bool {
+        let visible = visibleActivities
+        let index = preferences.mode == .single || side == .left ? 0 : 1
+        guard visible.indices.contains(index), let card = visible[index] else { return false }
+        if presentedKey != card.stableKey {
+            presentedKey = card.stableKey
+            userPinned = false
+            revision += 1
+        }
+        return true
     }
     func endPresentation() { presentedKey = nil; revision += 1 }
 
@@ -121,7 +133,7 @@ struct LayoutPreferences: Codable {
                 }
                 events.removeAll { Date().timeIntervalSince1970 - $0.createdAt > 30 || ($0.sourceID == source && $0.sequence <= (command.after ?? 0)) }
                 return HostResponse(ok: true, message: "UI events.", events: events.filter { $0.sourceID == source && $0.sequence > (command.after ?? 0) })
-            case "ping": return HostResponse(ok: true, message: "Notchwork is ready.", apiVersion: 2, capabilities: ["interface-state", "interface-size", "interface-forms"])
+            case "ping": return HostResponse(ok: true, message: "Notchwork is ready.", apiVersion: 2, capabilities: ["interface-state", "interface-size", "interface-forms", "side-hover", "user-controlled-pinning"])
             default: throw ActivityError.invalid("Unknown operation.")
             }
             scheduleExpiry(); publishSoon()

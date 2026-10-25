@@ -41,7 +41,7 @@ final class CustomInterfaceTests: XCTestCase {
         var activity = card(); activity.interface!.keepOpen = true
         activity.interface!.stateJSON = "\"" + String(repeating: "x", count: 100_000) + "\""
         XCTAssertTrue(store.apply(HostCommand(operation: "publish", activity: activity)).ok)
-        XCTAssertTrue(store.holdsPresentation)
+        XCTAssertFalse(store.holdsPresentation, "App keepOpen cannot pin the user’s notch")
         XCTAssertTrue(store.invoke(sourceID: "test.custom", activityID: "panel", action: "restart", value: String(repeating: "x", count: 100_000)))
         store.preferences.sources[0].allowCustomInterface = false
         XCTAssertFalse(store.holdsPresentation)
