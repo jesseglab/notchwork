@@ -10,9 +10,9 @@ A small macOS background app. A local integration API. Settings for the apps you
 
 **macOS 14+ · Swift / SwiftUI · Development preview · Noncommercial source available**
 
-[Download v0.2.0](https://github.com/jesseglab/notchwork/releases/tag/v0.2.0) · [Get started](#get-started) · [Connect an app](#connect-an-app) · [Copy an LLM prompt](docs/LLM_PROMPTS.md) · [API reference](docs/API.md) · [Releases](https://github.com/jesseglab/notchwork/releases)
+[Download v0.2.1](https://github.com/jesseglab/notchwork/releases/tag/v0.2.1) · [Get started](#get-started) · [Connect an app](#connect-an-app) · [Copy an LLM prompt](docs/LLM_PROMPTS.md) · [API reference](docs/API.md) · [Releases](https://github.com/jesseglab/notchwork/releases)
 
-> **Downloadable development preview:** Notchwork **0.2.0, build 9**, with API 2 is available for Apple silicon. [Download the DMG](https://github.com/jesseglab/notchwork/releases/download/v0.2.0/Notchwork-0.2.0-arm64-development.dmg) or [ZIP](https://github.com/jesseglab/notchwork/releases/download/v0.2.0/Notchwork-0.2.0-arm64-development.zip). No source build is needed. These binaries are ad-hoc signed and have not been notarized; macOS may block them on first launch.
+> **Downloadable development preview:** Notchwork **0.2.1, build 10**, with API 2 is available for Apple silicon. [Download the DMG](https://github.com/jesseglab/notchwork/releases/download/v0.2.1/Notchwork-0.2.1-arm64-development.dmg) or [ZIP](https://github.com/jesseglab/notchwork/releases/download/v0.2.1/Notchwork-0.2.1-arm64-development.zip). No source build is needed. These binaries are ad-hoc signed and have not been notarized; macOS may block them on first launch.
 
 ## A place for everything that’s happening
 
@@ -24,7 +24,7 @@ A small macOS background app. A local integration API. Settings for the apps you
 
 **Small when you’re working. Roomy when you need it.** The collapsed container follows the physical camera notch, with padded app icons at its sides. Titles and controls appear when expanded. Displays without a camera notch use a small top-center handle.
 
-Hover the left icon to open the left app’s full interface, or the right icon for the right app. Moving away closes it again; use the pin button when you want it to stay open. This behavior is available in the 0.2.1 development source (build 10).
+Hover the left icon to open the left app’s full interface, or the right icon for the right app. Moving away closes it again; use the pin button when you want it to stay open.
 
 Choose the mode in settings and enable the apps and custom interfaces you want. Notchwork has no built-in Music, Spotify, or Portkeeper adapters: apps connect through the same API.
 
@@ -38,7 +38,7 @@ One and Two keep your assignments fixed. Priority never forces the container ope
 
 ### Install with drag and drop
 
-[Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.2.0/Notchwork-0.2.0-arm64-development.dmg). The [release page](https://github.com/jesseglab/notchwork/releases/tag/v0.2.0) also includes a ZIP and SHA-256 checksums.
+[Download the Apple silicon DMG](https://github.com/jesseglab/notchwork/releases/download/v0.2.1/Notchwork-0.2.1-arm64-development.dmg). The [release page](https://github.com/jesseglab/notchwork/releases/tag/v0.2.1) also includes a ZIP and SHA-256 checksums.
 
 1. Download the DMG and open it.
 2. Drag **Notchwork** onto **Applications** in the installer window.

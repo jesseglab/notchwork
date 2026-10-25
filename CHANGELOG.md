@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.1 — Hover behavior (development)
+## 0.2.1 — 2026-10-25 (development preview)
 
 - Hovering or clicking either compact side opens only that app, at its requested interface dimensions.
 - One mode opens the selected app from either side; empty/disabled sides do not open their neighbour.

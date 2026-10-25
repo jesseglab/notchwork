@@ -1,6 +1,6 @@
 # Releasing Notchwork
 
-The current release is **0.2.0 (build 9)**, an API 2 development preview. Release publishing is a maintainer action; CI builds and checks artifacts but does not publish releases or tags.
+The current release is **0.2.1 (build 10)**, an API 2 development preview. Release publishing is a maintainer action; CI builds and checks artifacts but does not publish releases or tags.
 
 ## Release checks
 
@@ -16,14 +16,14 @@ Previously tested app artifacts can be packaged unchanged when subsequent commit
 
 ## Companion dependency order
 
-Publish Notchwork **v0.2.0** before Portkeeper **v1.3.3**. Portkeeper needs Notchwork 0.2.0 build 9 or newer and the `interface-forms` capability. Its distribution includes the matching runtime and installs it if needed. Source builds use sibling checkouts or an explicit `NOTCHWORK_PACKAGE_PATH`; CI pins a tested Notchwork commit.
+Publish Notchwork **v0.2.1** before Portkeeper **v1.3.4**. Portkeeper needs Notchwork 0.2.1 build 10 or newer and the `interface-forms` capability. Its distribution includes the matching runtime and installs it if needed. Source builds use sibling checkouts or an explicit `NOTCHWORK_PACKAGE_PATH`; CI pins a tested Notchwork commit.
 
 ## Release contents
 
 - Source at the reviewed version tag.
-- `Notchwork-0.2.0-arm64-development.dmg`, with the branded drag-to-Applications layout.
-- `Notchwork-0.2.0-arm64-development.zip`, containing the same app.
-- `notchworkctl-0.2.0-arm64-development.zip`, containing the CLI, LICENSE, and NOTICE.
+- `Notchwork-0.2.1-arm64-development.dmg`, with the branded drag-to-Applications layout.
+- `Notchwork-0.2.1-arm64-development.zip`, containing the same app.
+- `notchworkctl-0.2.1-arm64-development.zip`, containing the CLI, LICENSE, and NOTICE.
 - `SHA256SUMS`, covering the final downloadable artifacts and license files.
 - LICENSE and NOTICE alongside the downloads.
 
